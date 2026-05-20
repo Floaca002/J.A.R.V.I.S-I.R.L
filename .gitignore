@@ -1,0 +1,34 @@
+## .NET / VS
+bin/
+obj/
+out/
+*.user
+*.suo
+*.cache
+.vs/
+.vscode/
+*.swp
+
+## Build outputs
+publish/
+*.dll
+*.pdb
+*.exe
+
+## Secrets / local config
+secrets.json
+*.local.json
+appsettings.Development.json
+
+## Logs / data
+logs/
+*.log
+memory.json
+
+## OS
+Thumbs.db
+.DS_Store
+
+## NuGet
+*.nupkg
+packages/

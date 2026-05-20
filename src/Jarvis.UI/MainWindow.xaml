@@ -1,0 +1,155 @@
+<Window x:Class="Jarvis.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:Jarvis.UI.ViewModels"
+        Title="J.A.R.V.I.S — I.R.L."
+        Width="1280" Height="800"
+        MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource JarvisWindow}">
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Top status bar -->
+        <Border Grid.ColumnSpan="2" Background="{StaticResource BgPanel}"
+                BorderBrush="{StaticResource ArcCyanDim}" BorderThickness="0,0,0,1" Padding="20,14">
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="◤ J.A.R.V.I.S" Style="{StaticResource DisplayText}" FontSize="20"/>
+                    <TextBlock Text="  /  I.R.L." Foreground="{StaticResource Gold}"
+                               FontFamily="{StaticResource DisplayFont}" FontSize="20" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Ellipse Width="10" Height="10" Fill="{Binding StatusColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+                    <TextBlock Text=" · provider:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="14,0,4,0"/>
+                    <TextBlock Text="{Binding ProviderName}" Foreground="{StaticResource ArcCyan}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Left HUD panel -->
+        <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource BgPanel}"
+                BorderBrush="{StaticResource ArcCyanDim}" BorderThickness="0,0,1,0" Padding="20">
+            <StackPanel>
+                <!-- Arc reactor visual -->
+                <Grid Width="220" Height="220" Margin="0,10,0,30">
+                    <Ellipse Width="220" Height="220" Stroke="{StaticResource ArcCyanDim}" StrokeThickness="1"/>
+                    <Ellipse Width="180" Height="180" Stroke="{StaticResource ArcCyan}" StrokeThickness="2" Opacity="0.6"/>
+                    <Ellipse Width="120" Height="120" Stroke="{StaticResource ArcCyan}" StrokeThickness="1.5"/>
+                    <Ellipse Width="60" Height="60" Fill="{StaticResource ArcCyan}" Opacity="0.85"/>
+                    <Ellipse Width="22" Height="22" Fill="White"/>
+                    <Ellipse Width="220" Height="220" Stroke="{StaticResource Gold}" StrokeThickness="0.5"
+                             StrokeDashArray="2 6" Opacity="0.7">
+                        <Ellipse.RenderTransform>
+                            <RotateTransform x:Name="ArcSpin" CenterX="110" CenterY="110"/>
+                        </Ellipse.RenderTransform>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Ellipse.Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetName="ArcSpin"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         From="0" To="360" Duration="0:0:20"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                </Grid>
+
+                <TextBlock Text="SYSTEM" Style="{StaticResource DisplayText}" FontSize="12"
+                           Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
+                <TextBlock Text="{Binding SystemSummary}" TextWrapping="Wrap"
+                           Foreground="{StaticResource TextPrimary}" FontSize="12" Margin="0,0,0,20"/>
+
+                <TextBlock Text="TOOLS LOADED" Style="{StaticResource DisplayText}" FontSize="12"
+                           Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
+                <ItemsControl ItemsSource="{Binding ToolNames}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Foreground="{StaticResource ArcCyan}" FontSize="12" Margin="0,2"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- Chat panel -->
+        <Border Grid.Row="1" Grid.Column="1" Background="{StaticResource BgDeep}" Padding="30,20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <ScrollViewer x:Name="ChatScroll" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Messages}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,8" Padding="14,10" BorderThickness="1"
+                                        Background="{Binding Background}"
+                                        BorderBrush="{Binding Border}"
+                                        HorizontalAlignment="{Binding Align}"
+                                        MaxWidth="780">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Role}" Foreground="{Binding RoleColor}"
+                                                   FontFamily="{StaticResource DisplayFont}" FontSize="11"
+                                                   FontWeight="Bold" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource TextPrimary}" FontSize="14"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Border Grid.Row="1" Margin="0,16,0,0" Padding="0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0" Style="{StaticResource HudButton}"
+                                Content="{Binding MicLabel}" Width="120" Height="44"
+                                Command="{Binding ToggleVoiceCommand}" Margin="0,0,12,0"/>
+
+                        <TextBox Grid.Column="1" Style="{StaticResource HudTextBox}"
+                                 Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="44" VerticalContentAlignment="Center">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding SendCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+
+                        <Button Grid.Column="2" Style="{StaticResource HudButton}"
+                                Content="SEND ▸" Width="120" Height="44"
+                                Command="{Binding SendCommand}" Margin="12,0,0,0"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{StaticResource BgPanel}"
+                BorderBrush="{StaticResource ArcCyanDim}" BorderThickness="0,1,0,0" Padding="20,8">
+            <TextBlock Text="◢ Stark Industries Internal Build · do not distribute · Mark I"
+                       Foreground="{StaticResource TextMuted}" FontSize="11"/>
+        </Border>
+    </Grid>
+</Window>
