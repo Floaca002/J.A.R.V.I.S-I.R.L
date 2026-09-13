@@ -39,7 +39,7 @@ public sealed class GroqConfig
 {
     public string Endpoint { get; set; } = "https://api.groq.com/openai/v1/chat/completions";
     public string ApiKey { get; set; } = string.Empty;
-    public string Model { get; set; } = "llama-3.3-70b-versatile";
+    public string Model { get; set; } = "openai/gpt-oss-120b";
     public double Temperature { get; set; } = 0.4;
     public int MaxTokens { get; set; } = 2048;
 }
