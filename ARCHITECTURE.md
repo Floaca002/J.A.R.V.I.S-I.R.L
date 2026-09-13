@@ -9,7 +9,7 @@ This document is the **complete architectural blueprint** for the system: layers
 ```
                     ┌───────────────────────────────────────┐
                     │           ☁️  CLOUD (Groq)             │
-                    │   openai/gpt-oss-120b                 │
+                    │   openai/gpt-oss-20b                  │
                     │   OpenAI-compatible /v1/chat/...      │
                     └──────────────┬────────────────────────┘
                                    │  HTTPS + function-calling JSON

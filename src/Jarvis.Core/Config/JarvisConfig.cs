@@ -39,9 +39,17 @@ public sealed class GroqConfig
 {
     public string Endpoint { get; set; } = "https://api.groq.com/openai/v1/chat/completions";
     public string ApiKey { get; set; } = string.Empty;
-    public string Model { get; set; } = "openai/gpt-oss-120b";
+    public string Model { get; set; } = "openai/gpt-oss-20b";
     public double Temperature { get; set; } = 0.4;
-    public int MaxTokens { get; set; } = 2048;
+
+    /// <summary>
+    /// Kept modest on purpose: Groq's free/on-demand tier caps every gpt-oss/qwen chat
+    /// model at a flat 8K tokens-per-minute regardless of size, and rate limiters
+    /// typically reserve the full MaxTokens as "requested" capacity whether or not a
+    /// reply actually uses it. A smaller reservation leaves more of that tight budget
+    /// for the system prompt + tool catalog Jarvis resends on every single turn.
+    /// </summary>
+    public int MaxTokens { get; set; } = 800;
 }
 
 public sealed class OllamaConfig

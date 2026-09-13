@@ -66,6 +66,18 @@ Every system-control feature tries a chain of CLI tools and uses the first one i
 
 ---
 
+## Groq's free tier is small — what to expect
+
+Groq's free ("on-demand") tier caps every tool-calling-capable chat model (`openai/gpt-oss-20b`, `openai/gpt-oss-120b`, `qwen/qwen3.6-27b`, `qwen/qwen3.8-27b`) at a flat **8,000 tokens/minute, 200,000/day, 1,000 requests/day** — the same limit regardless of model size, so switching models doesn't buy you headroom. Check your current numbers at https://console.groq.com/settings/limits.
+
+Jarvis resends the system prompt and the full JSON schema for every registered tool (~20 of them) on *every single message*, on top of conversation history — that fixed overhead adds up fast against an 8K/minute budget, and a handful of messages can trip a `429 rate_limit_exceeded`. `Groq.MaxTokens` is deliberately kept modest (800) to leave more of that budget for the prompt+tools overhead rather than the reply.
+
+Two Groq models you'll see in your account that **won't work here**: `groq/compound` and `groq/compound-mini` have much higher limits (70K TPM, no daily cap), but they're Groq's own agentic system with built-in tools and reject custom `tools` schemas outright (`400: "tool calling" is not supported with this model`) — since Jarvis's entire tool-dispatch mechanism depends on custom tool schemas, these two aren't usable as a provider here.
+
+If you're hitting the wall regularly: pace your testing (limits reset per minute), see if Groq's Dev Tier plan raises it enough for your use, or switch to **Ollama** (fully local, no rate limit, needs your own hardware) or **Claude** (paid per-token, no free-tier throttling like this) in Settings.
+
+---
+
 ## Using Claude (Anthropic) instead of Groq
 
 Open **⚙ SETTINGS**, set default provider to **Anthropic**, and paste a Claude API key.

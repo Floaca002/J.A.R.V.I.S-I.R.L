@@ -32,7 +32,7 @@ Once it's running you can configure everything from the **⚙ SETTINGS** window 
     "DefaultProvider": "Groq",
     "Groq": {
       "ApiKey": "gsk_YOUR_KEY_HERE",
-      "Model": "openai/gpt-oss-120b"
+      "Model": "openai/gpt-oss-20b"
     },
     "Ollama": {
       "Endpoint": "http://localhost:11434",
