@@ -1,5 +1,7 @@
-using System.IO;
-using System.Windows;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Jarvis.Core.AI;
 using Jarvis.Core.Commands;
 using Jarvis.Core.Config;
@@ -10,6 +12,7 @@ using Jarvis.SelfUpgrade;
 using Jarvis.SystemControl;
 using Jarvis.UI.Services;
 using Jarvis.UI.Tools;
+using Jarvis.UI.Views;
 using Jarvis.Voice;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -25,10 +28,28 @@ public partial class App : Application
     public static SelfUpgradeEngine UpgradeEngine { get; private set; } = null!;
     public static AutomationController Automation { get; private set; } = null!;
 
-    protected override void OnStartup(StartupEventArgs e)
-    {
-        base.OnStartup(e);
+    public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
+    public override void OnFrameworkInitializationCompleted()
+    {
+        InitializeJarvis();
+
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.MainWindow = new MainWindow();
+            desktop.Exit += (_, _) =>
+            {
+                Tts?.Dispose();
+                Stt?.Dispose();
+                Log.CloseAndFlush();
+            };
+        }
+
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void InitializeJarvis()
+    {
         var dataDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "JarvisIRL");
         Directory.CreateDirectory(Path.Combine(dataDir, "logs"));
@@ -56,7 +77,7 @@ public partial class App : Application
         var automation = new AutomationController();
         Automation = automation;
         var clipboard = new ClipboardController();
-        IConfirmationService confirmation = new WpfConfirmationService();
+        IConfirmationService confirmation = new AvaloniaConfirmationService();
 
         var dispatcher = new ToolDispatcher();
         dispatcher.Register(new ReadFileTool(fs));
@@ -103,11 +124,16 @@ public partial class App : Application
         Tts = new TextToSpeech(Config.Voice);
         Stt = new SpeechToText(Config.Voice);
 
-        DispatcherUnhandledException += (_, args) =>
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
-            Log.Error(args.Exception, "Unhandled UI exception");
-            MessageBox.Show(args.Exception.Message, "Jarvis", MessageBoxButton.OK, MessageBoxImage.Error);
-            args.Handled = true;
+            var ex = args.ExceptionObject as Exception;
+            Log.Error(ex, "Unhandled exception");
+            _ = MessageDialog.ShowAsync("Jarvis — Error", ex?.Message ?? "An unknown error occurred.");
+        };
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            Log.Error(args.Exception, "Unobserved task exception");
+            args.SetObserved();
         };
     }
 
@@ -123,13 +149,5 @@ public partial class App : Application
         var cfg = new JarvisConfig();
         builder.Build().Bind(cfg);
         return cfg;
-    }
-
-    protected override void OnExit(ExitEventArgs e)
-    {
-        Tts?.Dispose();
-        Stt?.Dispose();
-        Log.CloseAndFlush();
-        base.OnExit(e);
     }
 }

@@ -108,11 +108,10 @@ public sealed class AnthropicProvider : IAIProvider
             Model = _cfg.Model,
             MaxTokens = _cfg.MaxTokens,
             Messages = claudeMessages,
+            Tools = tools.Count == 0 ? null : tools.Select(t => (ToolUnion)BuildToolSchema(t)).ToArray(),
         };
         if (!string.IsNullOrEmpty(systemPrompt))
-            parameters.System = systemPrompt;
-        if (tools.Count > 0)
-            parameters.Tools = tools.Select(t => (ToolUnion)BuildToolSchema(t)).ToArray();
+            parameters = parameters with { System = systemPrompt };
 
         Message response;
         try

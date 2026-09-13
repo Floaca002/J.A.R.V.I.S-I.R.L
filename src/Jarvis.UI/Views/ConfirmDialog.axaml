@@ -1,29 +1,29 @@
-<Window x:Class="Jarvis.UI.Views.ConfirmDialog"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Jarvis.UI.Views.ConfirmDialog"
         Title="Jarvis — Authorization Required"
         Width="520" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        CanResize="False"
         ShowInTaskbar="False"
-        Style="{StaticResource JarvisWindow}">
+        Background="{StaticResource BgDeep}">
     <Border BorderBrush="{StaticResource Gold}" BorderThickness="1" Padding="24">
         <StackPanel>
-            <TextBlock Text="⚠ AUTHORIZATION REQUIRED" Style="{StaticResource DisplayText}"
+            <TextBlock Text="⚠ AUTHORIZATION REQUIRED" Classes="display"
                        Foreground="{StaticResource Gold}" FontSize="16" Margin="0,0,0,4"/>
             <TextBlock x:Name="TitleTextBlock" TextWrapping="Wrap" FontSize="14"
                        Foreground="{StaticResource TextPrimary}" Margin="0,8,0,12"/>
             <Border Background="{StaticResource BgPanelAccent}" BorderBrush="{StaticResource ArcCyanDim}"
                     BorderThickness="1" Padding="12" MaxHeight="240">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer>
                     <TextBlock x:Name="DetailsTextBlock" TextWrapping="Wrap" FontFamily="{StaticResource BodyFont}"
                                FontSize="12" Foreground="{StaticResource TextMuted}"/>
                 </ScrollViewer>
             </Border>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button Content="DENY" Style="{StaticResource HudButton}" Width="120" Height="40"
+                <Button Classes="hud" Content="DENY" Width="120" Height="40"
                         Margin="0,0,12,0" Click="OnDeny"/>
-                <Button Content="AUTHORIZE ▸" Style="{StaticResource HudButton}" Width="140" Height="40"
+                <Button Classes="hud" Content="AUTHORIZE ▸" Width="140" Height="40"
                         Click="OnAuthorize"/>
             </StackPanel>
         </StackPanel>

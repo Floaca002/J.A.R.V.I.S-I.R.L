@@ -1,31 +1,35 @@
 # J.A.R.V.I.S I.R.L.
 
 > **Just A Rather Very Intelligent System — In Real Life**
-> A self-upgradable Windows AI assistant inspired by Iron Man's Jarvis.
+> A self-upgradable Linux AI assistant inspired by Iron Man's Jarvis.
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![WPF](https://img.shields.io/badge/WPF-Windows-0078D6?logo=windows)](https://learn.microsoft.com/dotnet/desktop/wpf/)
+[![Avalonia](https://img.shields.io/badge/Avalonia-Linux%2FX11%2FWayland-6B4FBB)](https://avaloniaui.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
 
 ## What is this?
 
-J.A.R.V.I.S I.R.L. is a **Windows desktop AI assistant** that:
+J.A.R.V.I.S I.R.L. is a **Linux desktop AI assistant** (developed against CachyOS, but any modern Linux desktop works) that:
 
-- Talks to you with voice (TTS) and listens (STT) — all **free**, using Windows built-in speech.
+- Talks to you with voice (TTS via `espeak-ng` or Piper) and listens via push-to-talk (STT via whisper.cpp) — all **free and offline**.
 - Uses a **cloud-hosted LLM brain** — Groq free tier by default, local Ollama, or Claude (Anthropic) if you want vision and top-tier reasoning.
-- Can **see your screen** on request, when you turn that on (Claude only — see [Vision](#vision-lets-jarvis-see-your-screen) below).
-- Can **read/write files**, **open/close apps**, **execute shell commands**, and **automate** your Windows machine.
+- Can **see your screen** on request, when you turn that on (Claude only — see [Vision](#vision--lets-jarvis-see-your-screen) below).
+- Can **read/write files**, **open/close apps**, **execute shell commands**, and **automate your desktop** — screenshots, clipboard, volume, window control, mouse/keyboard — via whatever CLI tools your distro/compositor provides.
 - Has **full access to its own source code** and can **upgrade itself** on command via Roslyn + GitHub.
-- Beautiful **Iron Man-style HUD** built in WPF with animated arc-reactor visuals.
+- **Iron Man-style HUD** built with [Avalonia](https://avaloniaui.net/) (cross-platform .NET UI) with an animated arc-reactor visual.
+
+### A note on Linux desktop diversity
+
+There is no single API for screen capture, clipboard, volume, window management, or input injection on Linux — it depends on your display server (X11 vs Wayland) and desktop environment/compositor. Every system-control feature here **detects what's actually installed** on your machine at runtime and uses that (see the table in [Linux platform notes](#linux-platform-notes)); where nothing usable is found, Jarvis tells you exactly what to install rather than silently doing nothing.
 
 ---
 
 ## Quick Start
 
-1. Install [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (Windows — Jarvis uses WPF, WinForms and `System.Speech`, all Windows-only).
-2. Get a free [Groq API key](https://console.groq.com/keys)
+1. Install [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) — on CachyOS/Arch: `sudo pacman -S dotnet-sdk`.
+2. Get a free [Groq API key](https://console.groq.com/keys).
 3. Clone the repo:
    ```bash
    git clone https://github.com/Floaca002/J.A.R.V.I.S-I.R.L.git
@@ -36,9 +40,29 @@ J.A.R.V.I.S I.R.L. is a **Windows desktop AI assistant** that:
    dotnet build
    dotnet run --project src/Jarvis.UI
    ```
-5. On first launch click **⚙ SETTINGS** in the top bar and paste your Groq API key. It's saved to `%AppData%\JarvisIRL\secrets.json` (never into the repo) — restart Jarvis to pick it up. You can also just edit `config/appsettings.json` directly if you prefer.
+5. On first launch click **⚙ SETTINGS** in the top bar and paste your Groq API key. It's saved to `~/.config/JarvisIRL/secrets.json` (never into the repo) — restart Jarvis to pick it up. You can also just edit `config/appsettings.json` directly if you prefer.
 
-See [`BUILD_INSTRUCTIONS.md`](BUILD_INSTRUCTIONS.md) for the full guide.
+See [`BUILD_INSTRUCTIONS.md`](BUILD_INSTRUCTIONS.md) for the full guide, including which CLI tools to install for full functionality.
+
+---
+
+## Linux platform notes
+
+Every system-control feature tries a chain of CLI tools and uses the first one it finds. None of these are hard dependencies — Jarvis runs fine without any of them installed, those specific tools/tool-calls just report what's missing.
+
+| Feature | Tries, in order | Notes |
+|---|---|---|
+| Screenshot | `grim` (Wayland) → `spectacle` → `gnome-screenshot` → `scrot` → `import` (ImageMagick) | |
+| Clipboard | `wl-copy`/`wl-paste` (Wayland) → `xclip` → `xsel` | |
+| Volume | `wpctl` (WirePlumber/PipeWire) → `pactl` (Pulse/pipewire-pulse) → `amixer` (ALSA) | |
+| Window control (minimize/maximize/focus/close) | `wmctrl` (+ `xdotool` for minimize) | X11 or XWayland only — most Wayland compositors don't expose generic window control |
+| Mouse click | `xdotool` | X11/XWayland only |
+| Typing text | `ydotool` (Wayland) → `xdotool` | `ydotool` needs the `ydotoold` daemon running and the user in the right input group |
+| Shell commands | `bash` | |
+| Text-to-speech | Piper (if `Voice.PiperModelPath` is set) → `espeak-ng`/`espeak` | Piper sounds far more natural; espeak-ng is the always-available fallback |
+| Voice input | `arecord`/`parecord` to capture + whisper.cpp to transcribe | Push-to-talk (click mic to start, click again to stop) — there's no lightweight, verifiable "always listening for a wake word" option on Linux without pulling in a full VAD/wake-word model |
+
+**Window control and mouse clicks are the biggest Wayland gap.** Wayland's security model deliberately doesn't let arbitrary apps manage other windows or inject input the way X11 does, and there's no standard cross-compositor tool for it — `xdotool`/`wmctrl` still work for XWayland-backed apps under most compositors, but not for native Wayland windows. Typing text has a real Wayland-native path via `ydotool`.
 
 ---
 
@@ -52,7 +76,7 @@ Open **⚙ SETTINGS**, set default provider to **Anthropic**, and paste a Claude
 2. Generate an API key under **API Keys**.
 3. Paste it into Jarvis's Settings window (or set env var `JARVIS_ANTHROPIC_API_KEY`).
 
-Roughly, as of writing: Claude Opus 5 (the default model Jarvis uses) costs about $5 per million input tokens and $25 per million output tokens — a typical short back-and-forth is a fraction of a cent, but it adds up with heavy use, and more so with [Vision](#vision-lets-jarvis-see-your-screen) turned on. Check [Anthropic's pricing page](https://www.anthropic.com/pricing) for current rates, and set a spending limit in the Console if you want a hard ceiling.
+Roughly, as of writing: Claude Opus 5 (the default model Jarvis uses) costs about $5 per million input tokens and $25 per million output tokens — a typical short back-and-forth is a fraction of a cent, but it adds up with heavy use, and more so with [Vision](#vision--lets-jarvis-see-your-screen) turned on. Check [Anthropic's pricing page](https://www.anthropic.com/pricing) for current rates, and set a spending limit in the Console if you want a hard ceiling.
 
 Groq's free tier remains the default specifically because it costs nothing to try — switch to Claude when you want vision, or better reasoning/self-upgrade quality.
 
@@ -89,13 +113,13 @@ A few things worth knowing:
 - **Tool-use / function-calling** — Jarvis chooses the right action
 - **File system control** — read, write, list, create folders, delete (with confirmation)
 - **App control** — launch programs/URLs, close windows, list processes
-- **Window & input control** — minimize/maximize/focus/close windows, volume up/down/mute, clipboard read/write
-- **Shell execution** — run PowerShell, gated behind a confirmation modal
-- **System automation** — mouse, keyboard, screenshots
+- **Window & input control** — minimize/maximize/focus/close windows (X11/XWayland), volume up/down/mute, clipboard read/write
+- **Shell execution** — run bash, gated behind a confirmation modal
+- **System automation** — mouse, keyboard, screenshots (see [Linux platform notes](#linux-platform-notes) for what needs what)
 - **Self-upgrade** — the LLM writes a new C# tool, Jarvis compiles it with Roslyn and hot-loads it, with a confirmation modal, an audit trail, and a one-command revert
 - **Update checks** — asks GitHub for the latest release and reports it
-- **In-app Settings window** — configure provider, API keys, vision, voice (pick from installed voices + preview) and security flags without hand-editing JSON
-- **Voice mode** — wake word "Jarvis", continuous listening, natural TTS, with automatic fallback to the best "Jarvis-like" voice installed
+- **In-app Settings window** — configure provider, API keys, vision, voice, and security flags without hand-editing JSON
+- **Voice mode** — push-to-talk input (whisper.cpp) and natural TTS (Piper, with an espeak-ng fallback that needs no setup)
 - **Iron Man-style HUD** — animated arc reactor, live tool list, self-upgrade log, vision status indicator
 
 ---

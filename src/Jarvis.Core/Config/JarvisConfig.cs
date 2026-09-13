@@ -54,8 +54,16 @@ public sealed class OllamaConfig
 public sealed class VoiceConfig
 {
     public bool Enabled { get; set; } = true;
-    public string WakeWord { get; set; } = "jarvis";
-    public string Voice { get; set; } = "Microsoft David Desktop";
+
+    /// <summary>espeak-ng "-v" voice, used unless PiperModelPath is set and Piper is installed.</summary>
+    public string EspeakVoice { get; set; } = "en-gb+m3";
+
+    /// <summary>Path to a downloaded Piper .onnx voice model for natural-sounding speech — see README.</summary>
+    public string PiperModelPath { get; set; } = string.Empty;
+
+    /// <summary>Path to a whisper.cpp ggml model (e.g. ggml-base.en.bin) for push-to-talk voice input — see README.</summary>
+    public string WhisperModelPath { get; set; } = string.Empty;
+
     public int Rate { get; set; } = 0;
     public int Volume { get; set; } = 100;
 }

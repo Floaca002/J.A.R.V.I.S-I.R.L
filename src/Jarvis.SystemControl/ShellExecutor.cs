@@ -4,29 +4,32 @@ using System.Text;
 namespace Jarvis.SystemControl;
 
 /// <summary>
-/// Run PowerShell / cmd commands and capture output.
+/// Run shell commands and capture output.
 /// </summary>
 public sealed class ShellExecutor
 {
-    public async Task<string> RunPowerShellAsync(string command, TimeSpan timeout, CancellationToken ct = default)
+    public async Task<string> RunShellAsync(string command, TimeSpan timeout, CancellationToken ct = default)
     {
         var psi = new ProcessStartInfo
         {
-            FileName = "powershell.exe",
-            Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"{command.Replace("\"", "\\\"")}\"",
+            FileName = "bash",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        // ArgumentList (not a concatenated Arguments string) so the command reaches
+        // bash -c as a single argv element — no manual quote-escaping, no injection risk.
+        psi.ArgumentList.Add("-lc");
+        psi.ArgumentList.Add(command);
 
-        using var p = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start PowerShell");
+        using var p = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start bash");
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(timeout);
 
-        var stdoutTask = p.StandardOutput.ReadToEndAsync(cts.Token).AsTask();
-        var stderrTask = p.StandardError.ReadToEndAsync(cts.Token).AsTask();
+        var stdoutTask = p.StandardOutput.ReadToEndAsync(cts.Token);
+        var stderrTask = p.StandardError.ReadToEndAsync(cts.Token);
 
         try
         {

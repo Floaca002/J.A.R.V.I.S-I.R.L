@@ -18,7 +18,7 @@ LLM → upgrade_self(tool_name, source_code)
         ↓
    ToolDispatcher.Register(tool)    ← live in this process
         ↓
-   Source persisted to %AppData%/JarvisIRL/upgrades/
+   Source persisted to ~/.config/JarvisIRL/upgrades/
 ```
 
 The new tool is **immediately available** in the next conversation turn. No restart.
@@ -33,7 +33,7 @@ Downloading, extracting, and swapping the running binaries automatically is **no
 
 ## Safety
 
-- Every dynamic tool source is saved with a timestamp — full audit trail (`%AppData%/JarvisIRL/upgrades/`).
+- Every dynamic tool source is saved with a timestamp — full audit trail (`~/.config/JarvisIRL/upgrades/`).
 - Generated code runs in a **collectible** `AssemblyLoadContext` so a buggy tool can, in principle, be unloaded.
 - If `Security.RequireConfirmationForCommands == true`, the UI shows the full generated source in a modal and waits for you to authorize it before compiling.
 - The `revert_last_upgrade` tool (say "Jarvis, revert your last upgrade") unregisters the most recently installed dynamic tool. The source file is kept on disk for audit even after reverting.

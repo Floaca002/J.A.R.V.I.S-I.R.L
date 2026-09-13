@@ -9,9 +9,9 @@ on:
 
 jobs:
   build:
-    # Jarvis is a Windows-only app (WPF, WinForms, System.Speech), so it can only
-    # be fully compiled and verified on a Windows runner.
-    runs-on: windows-latest
+    # Jarvis targets Linux (Avalonia UI, CLI-tool-based system control, no Windows
+    # dependencies), so a plain Ubuntu runner is enough to verify every project builds.
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4

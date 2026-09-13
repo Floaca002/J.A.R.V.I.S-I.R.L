@@ -1,39 +1,34 @@
-using System.Runtime.Versioning;
-using System.Windows.Forms;
-
 namespace Jarvis.SystemControl;
 
 /// <summary>
-/// Windows clipboard access. Clipboard APIs require an STA thread, so every call
-/// is dispatched onto a short-lived dedicated STA thread rather than assuming the
-/// caller's thread apartment state.
+/// Clipboard access via whichever CLI tool matches the display server:
+/// wl-clipboard (Wayland) or xclip/xsel (X11).
 /// </summary>
-[SupportedOSPlatform("windows")]
 public sealed class ClipboardController
 {
     public string GetText()
     {
-        string result = string.Empty;
-        RunSta(() => result = Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty);
-        return result;
+        if (ProcessRunner.IsWayland() && ProcessRunner.IsOnPath("wl-paste"))
+            return ProcessRunner.Capture("wl-paste", new[] { "--no-newline" }) ?? string.Empty;
+        if (ProcessRunner.IsOnPath("xclip"))
+            return ProcessRunner.Capture("xclip", new[] { "-selection", "clipboard", "-o" }) ?? string.Empty;
+        if (ProcessRunner.IsOnPath("xsel"))
+            return ProcessRunner.Capture("xsel", new[] { "--clipboard", "--output" }) ?? string.Empty;
+
+        throw new InvalidOperationException(
+            "No clipboard tool found. Install `wl-clipboard` (Wayland) or `xclip`/`xsel` (X11).");
     }
 
     public void SetText(string text)
     {
-        RunSta(() => Clipboard.SetText(text ?? string.Empty));
-    }
+        if (ProcessRunner.IsWayland() && ProcessRunner.IsOnPath("wl-copy") && ProcessRunner.Run("wl-copy", Array.Empty<string>(), stdin: text))
+            return;
+        if (ProcessRunner.IsOnPath("xclip") && ProcessRunner.Run("xclip", new[] { "-selection", "clipboard" }, stdin: text))
+            return;
+        if (ProcessRunner.IsOnPath("xsel") && ProcessRunner.Run("xsel", new[] { "--clipboard", "--input" }, stdin: text))
+            return;
 
-    private static void RunSta(Action action)
-    {
-        Exception? error = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { error = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (error != null) throw error;
+        throw new InvalidOperationException(
+            "No clipboard tool found. Install `wl-clipboard` (Wayland) or `xclip`/`xsel` (X11).");
     }
 }

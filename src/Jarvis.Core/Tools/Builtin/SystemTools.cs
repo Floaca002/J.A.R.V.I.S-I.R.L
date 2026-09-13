@@ -74,12 +74,12 @@ public sealed class ListProcessesTool(AppController apps) : ITool
 public sealed class RunShellTool(ShellExecutor shell, SecurityConfig security, IConfirmationService confirm) : ITool
 {
     public string Name => "run_shell";
-    public string Description => "Execute a PowerShell command and return stdout+stderr. Destructive — confirm first.";
+    public string Description => "Execute a bash command and return stdout+stderr. Destructive — confirm first.";
     public string JsonSchema => """
     {
       "type": "object",
       "properties": {
-        "command":      { "type": "string", "description": "PowerShell command line." },
+        "command":      { "type": "string", "description": "Bash command line." },
         "timeout_secs": { "type": "integer", "default": 30 }
       },
       "required": ["command"]
@@ -100,7 +100,7 @@ public sealed class RunShellTool(ShellExecutor shell, SecurityConfig security, I
             if (!approved) return "Cancelled by user.";
         }
 
-        return await shell.RunPowerShellAsync(cmd, TimeSpan.FromSeconds(timeout), ct).ConfigureAwait(false);
+        return await shell.RunShellAsync(cmd, TimeSpan.FromSeconds(timeout), ct).ConfigureAwait(false);
     }
 }
 
@@ -142,7 +142,7 @@ public sealed class OpenUrlTool(AppController apps) : ITool
     public Task<string> RunAsync(JsonNode? args, CancellationToken ct = default)
     {
         var url = args?["url"]?.GetValue<string>() ?? throw new ArgumentException("'url' required");
-        apps.OpenApp(url, null);
+        apps.OpenUrl(url);
         return Task.FromResult($"Opened {url}");
     }
 }

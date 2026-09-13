@@ -1,88 +1,146 @@
-using System.Runtime.Versioning;
-using System.Speech.Synthesis;
+using System.Diagnostics;
+using System.Globalization;
 using Jarvis.Core.Config;
 
 namespace Jarvis.Voice;
 
 /// <summary>
-/// Free, offline TTS using Windows built-in System.Speech.
+/// Linux TTS. Prefers Piper (natural-sounding neural voices, needs a downloaded
+/// .onnx model — see README) and falls back to espeak-ng (robotic but installed
+/// almost everywhere and needs no model download).
 /// </summary>
-[SupportedOSPlatform("windows")]
 public sealed class TextToSpeech : IDisposable
 {
-    private readonly SpeechSynthesizer _synth;
+    /// <summary>A handful of espeak-ng voice variants worth offering in a picker; any espeak-ng "-v" value works.</summary>
+    public static readonly IReadOnlyList<string> CommonEspeakVoices =
+        new[] { "en-gb+m3", "en-gb+m1", "en-gb-x-rp+m3", "en-us+m3", "en-us+m1" };
 
-    public TextToSpeech(VoiceConfig cfg)
-    {
-        _synth = new SpeechSynthesizer();
-        _synth.SetOutputToDefaultAudioDevice();
-        _synth.Rate = Math.Clamp(cfg.Rate, -10, 10);
-        _synth.Volume = Math.Clamp(cfg.Volume, 0, 100);
+    private readonly VoiceConfig _cfg;
+    private Process? _current;
 
-        if (!string.IsNullOrWhiteSpace(cfg.Voice))
-        {
-            try { _synth.SelectVoice(cfg.Voice); }
-            catch
-            {
-                var picked = PickBestFallbackVoice(_synth.GetInstalledVoices());
-                if (picked != null) _synth.SelectVoice(picked);
-            }
-        }
-    }
+    public TextToSpeech(VoiceConfig cfg) => _cfg = cfg;
 
     public void Speak(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return;
-        _synth.SpeakAsyncCancelAll();
-        _synth.SpeakAsync(text);
+        Stop();
+        _current = SpeakInternal(text, _cfg);
     }
 
-    public void Stop() => _synth.SpeakAsyncCancelAll();
-
-    public void Dispose() => _synth.Dispose();
-
-    /// <summary>Names of every enabled voice installed on this machine (for a Settings picker).</summary>
-    public static IReadOnlyList<string> ListInstalledVoiceNames()
+    public void Stop()
     {
-        using var synth = new SpeechSynthesizer();
-        return synth.GetInstalledVoices()
-            .Where(v => v.Enabled)
-            .Select(v => v.VoiceInfo.Name)
-            .ToList();
+        var p = _current;
+        _current = null;
+        if (p == null) return;
+        try { if (!p.HasExited) p.Kill(true); } catch { /* best effort */ }
     }
 
-    /// <summary>Speaks a short sample synchronously with the given settings — for a Settings "preview" button. Call off the UI thread.</summary>
-    public static void Preview(string? voiceName, int rate, int volume, string sampleText)
+    public void Dispose() => Stop();
+
+    /// <summary>Speak a sample synchronously — for a Settings "preview" button. Call off the UI thread.</summary>
+    public static void Preview(VoiceConfig cfg, string sampleText)
     {
-        using var synth = new SpeechSynthesizer();
-        synth.SetOutputToDefaultAudioDevice();
-        synth.Rate = Math.Clamp(rate, -10, 10);
-        synth.Volume = Math.Clamp(volume, 0, 100);
-        if (!string.IsNullOrWhiteSpace(voiceName))
+        using var p = SpeakInternal(sampleText, cfg);
+        p?.WaitForExit(15000);
+    }
+
+    private static Process? SpeakInternal(string text, VoiceConfig cfg)
+    {
+        if (!string.IsNullOrWhiteSpace(cfg.PiperModelPath) && File.Exists(cfg.PiperModelPath) && IsOnPath("piper"))
         {
-            try { synth.SelectVoice(voiceName); }
-            catch { /* fall back to the default voice */ }
+            var wav = Path.Combine(Path.GetTempPath(), $"jarvis-tts-{Guid.NewGuid():N}.wav");
+            if (RunPiper(text, cfg, wav) && File.Exists(wav))
+                return PlayAndCleanup(wav);
         }
-        synth.Speak(sampleText);
+        return SpeakWithEspeak(text, cfg);
     }
 
-    /// <summary>
-    /// Windows' modern "Natural" voices (Ryan, Guy, Aria...) sound far more like a
-    /// movie AI assistant than the classic SAPI5 desktop voices (David/Zira/Mark), but
-    /// aren't always registered under the exact name a user might configure. Prefer the
-    /// closest match to "Jarvis" available, then any male voice, before giving up.
-    /// </summary>
-    private static string? PickBestFallbackVoice(IEnumerable<InstalledVoice> installed)
+    private static bool RunPiper(string text, VoiceConfig cfg, string outWav)
     {
-        var enabled = installed.Where(v => v.Enabled).ToList();
-        string[] preferredOrder = { "Ryan", "Guy", "George", "James", "David", "Mark" };
-
-        foreach (var name in preferredOrder)
+        try
         {
-            var match = enabled.FirstOrDefault(v => v.VoiceInfo.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
-            if (match != null) return match.VoiceInfo.Name;
+            var psi = new ProcessStartInfo("piper")
+            {
+                UseShellExecute = false,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            psi.ArgumentList.Add("--model");
+            psi.ArgumentList.Add(cfg.PiperModelPath);
+            psi.ArgumentList.Add("--length_scale");
+            psi.ArgumentList.Add(RateToPiperLengthScale(cfg.Rate).ToString(CultureInfo.InvariantCulture));
+            psi.ArgumentList.Add("--output_file");
+            psi.ArgumentList.Add(outWav);
+
+            using var p = Process.Start(psi);
+            if (p == null) return false;
+            p.StandardInput.Write(text);
+            p.StandardInput.Close();
+            return p.WaitForExit(20000) && p.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>SAPI-style -10..10 rate → Piper's length_scale, where smaller is faster and 1.0 is Piper's default pace.</summary>
+    private static double RateToPiperLengthScale(int rate) => 1.0 - Math.Clamp(rate, -10, 10) * 0.04;
+
+    private static Process? SpeakWithEspeak(string text, VoiceConfig cfg)
+    {
+        var exe = IsOnPath("espeak-ng") ? "espeak-ng" : IsOnPath("espeak") ? "espeak" : null;
+        if (exe == null)
+            throw new InvalidOperationException(
+                "No text-to-speech engine found. Install `espeak-ng` for basic speech, or configure Piper " +
+                "(Settings → Voice → Piper model path) for a much more natural voice — see README.");
+
+        var wpm = Math.Clamp(175 + Math.Clamp(cfg.Rate, -10, 10) * 8, 80, 450);
+        var amplitude = Math.Clamp(cfg.Volume, 0, 200);
+
+        var psi = new ProcessStartInfo(exe)
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        psi.ArgumentList.Add("-v");
+        psi.ArgumentList.Add(string.IsNullOrWhiteSpace(cfg.EspeakVoice) ? "en-gb+m3" : cfg.EspeakVoice);
+        psi.ArgumentList.Add("-s");
+        psi.ArgumentList.Add(wpm.ToString(CultureInfo.InvariantCulture));
+        psi.ArgumentList.Add("-a");
+        psi.ArgumentList.Add(amplitude.ToString(CultureInfo.InvariantCulture));
+        psi.ArgumentList.Add(text);
+
+        return Process.Start(psi);
+    }
+
+    private static Process? PlayAndCleanup(string wav)
+    {
+        var exe = IsOnPath("paplay") ? "paplay" : IsOnPath("aplay") ? "aplay" : IsOnPath("ffplay") ? "ffplay" : null;
+        if (exe == null)
+        {
+            try { File.Delete(wav); } catch { /* best effort */ }
+            throw new InvalidOperationException(
+                "No audio player found. Install `pipewire-pulse`/`pulseaudio-utils` (paplay) or `alsa-utils` (aplay).");
         }
 
-        return enabled.FirstOrDefault(v => v.VoiceInfo.Gender == VoiceGender.Male)?.VoiceInfo.Name;
+        var psi = new ProcessStartInfo(exe) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
+        if (exe == "ffplay") { psi.ArgumentList.Add("-nodisp"); psi.ArgumentList.Add("-autoexit"); }
+        psi.ArgumentList.Add(wav);
+
+        var p = Process.Start(psi);
+        if (p != null)
+            _ = p.WaitForExitAsync().ContinueWith(_ => { try { File.Delete(wav); } catch { } });
+        return p;
+    }
+
+    private static bool IsOnPath(string exe)
+    {
+        var path = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        return path.Split(Path.PathSeparator).Any(dir => !string.IsNullOrEmpty(dir) && File.Exists(Path.Combine(dir, exe)));
     }
 }
