@@ -8,7 +8,7 @@ This document walks you through every phase of bringing J.A.R.V.I.S to life, fro
 
 | # | Task | Time |
 |---|------|------|
-| 0.1 | Install **.NET 8 SDK** → `sudo pacman -S dotnet-sdk` (CachyOS/Arch) or https://dotnet.microsoft.com/download/dotnet/8.0 | 5 min |
+| 0.1 | Install the **.NET SDK** → `sudo pacman -S dotnet-sdk` (CachyOS/Arch, tracks the current release) or https://dotnet.microsoft.com/download | 5 min |
 | 0.2 | Install a C# editor — VS Code with the C# Dev Kit works well; JetBrains Rider is another good option | 15 min |
 | 0.3 | Get a free **Groq API key** → https://console.groq.com/keys | 2 min |
 | 0.4 | *(Optional)* Install **Ollama** for offline LLM → https://ollama.com/download | 5 min |

@@ -3,7 +3,7 @@
 > **Just A Rather Very Intelligent System — In Real Life**
 > A self-upgradable Linux AI assistant inspired by Iron Man's Jarvis.
 
-[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-Linux%2FX11%2FWayland-6B4FBB)](https://avaloniaui.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -28,7 +28,7 @@ There is no single API for screen capture, clipboard, volume, window management,
 
 ## Quick Start
 
-1. Install [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) — on CachyOS/Arch: `sudo pacman -S dotnet-sdk`.
+1. Install the [.NET SDK](https://dotnet.microsoft.com/download) — on CachyOS/Arch: `sudo pacman -S dotnet-sdk` (currently installs .NET 10; Arch's rolling repos only carry the current release, see [Troubleshooting](BUILD_INSTRUCTIONS.md#8-troubleshooting) if `dotnet` complains about a version mismatch after an update).
 2. Get a free [Groq API key](https://console.groq.com/keys).
 3. Clone the repo:
    ```bash

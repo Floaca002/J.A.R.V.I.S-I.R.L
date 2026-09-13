@@ -18,7 +18,7 @@ This document is the **complete architectural blueprint** for the system: layers
 │  💻  YOUR LINUX DESKTOP             │                                   │
 │                                  ▼                                   │
 │   ┌──────────────────────────────────────────────────────────────┐   │
-│   │                    Jarvis.UI  (Avalonia .NET 8)                   │   │
+│   │                    Jarvis.UI  (Avalonia .NET 10)                  │   │
 │   │   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌──────────────┐    │   │
 │   │   │  HUD    │  │  Chat   │  │  Voice  │  │   Settings   │    │   │
 │   │   │  View   │  │  View   │  │  Toggle │  │     View     │    │   │
