@@ -24,7 +24,7 @@ git clone https://github.com/Floaca002/J.A.R.V.I.S-I.R.L.git
 cd J.A.R.V.I.S-I.R.L
 ```
 
-Open `config/appsettings.json` and set:
+Once it's running you can configure everything from the **⚙ SETTINGS** window in the app (saved to `%AppData%\JarvisIRL\secrets.json`). Or, to configure before the first run, open `config/appsettings.json` and set:
 
 ```json
 {
@@ -108,13 +108,17 @@ What happens:
 3. The new tool is hot-loaded into the running process — no restart.
 4. *(Optional)* `Jarvis.SelfUpgrade.GitHubUpdater` commits the new file to your repo.
 
-You can also pull a full release upgrade:
+You can also check for a newer release:
 
 > *"Jarvis, check for updates."*
 
-This calls the GitHub Releases API, downloads the new build, and restarts itself into the new version.
+This calls the GitHub Releases API and tells you the latest tag and download link — installing it is currently a manual step (see [`SELF_UPGRADE.md`](docs/SELF_UPGRADE.md)).
 
-> **⚠️ Safety:** Self-upgrades are sandboxed. Every generated change is shown to you with a diff and requires confirmation unless you disable `RequireConfirmationForCommands`.
+If a self-installed tool misbehaves:
+
+> *"Jarvis, revert your last upgrade."*
+
+> **⚠️ Safety:** Every `run_shell`, file write/delete, and `upgrade_self` call shows you a HUD modal with the exact command/path/source and waits for you to authorize it, unless you disable the matching `Security.RequireConfirmation*` flag.
 
 ---
 

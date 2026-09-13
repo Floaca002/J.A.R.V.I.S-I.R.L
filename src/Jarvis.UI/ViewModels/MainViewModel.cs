@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using Jarvis.UI.Commands;
+using Jarvis.UI.Views;
 
 namespace Jarvis.UI.ViewModels;
 
@@ -19,6 +20,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public ObservableCollection<ChatBubble> Messages { get; } = new();
     public ObservableCollection<string> ToolNames { get; } = new();
+    public ObservableCollection<string> UpgradeLog { get; } = new();
 
     public string InputText
     {
@@ -38,15 +40,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public ICommand SendCommand { get; }
     public ICommand ToggleVoiceCommand { get; }
+    public ICommand OpenSettingsCommand { get; }
 
     public MainViewModel()
     {
         SendCommand = new RelayCommand(async _ => await SendAsync(), _ => !string.IsNullOrWhiteSpace(InputText));
         ToggleVoiceCommand = new RelayCommand(_ => ToggleVoice());
+        OpenSettingsCommand = new RelayCommand(_ => OpenSettings());
 
         if (App.Orchestrator != null)
             foreach (var t in App.Orchestrator.AvailableTools)
                 ToolNames.Add("▸ " + t.Name);
+        RefreshUpgradeLog();
 
         // Initial greeting
         Messages.Add(new ChatBubble("JARVIS", "All systems online. How may I assist you, sir?", true));
@@ -90,12 +95,27 @@ public sealed class MainViewModel : INotifyPropertyChanged
             ToolNames.Clear();
             foreach (var t in App.Orchestrator.AvailableTools)
                 ToolNames.Add("▸ " + t.Name);
+            RefreshUpgradeLog();
         }
         catch (Exception ex)
         {
             Messages.Add(new ChatBubble("ERROR", ex.Message, true) { IsError = true });
             SetStatus("Error", Brushes.OrangeRed);
         }
+    }
+
+    private void RefreshUpgradeLog()
+    {
+        UpgradeLog.Clear();
+        if (App.UpgradeEngine == null) return;
+        foreach (var record in App.UpgradeEngine.History.Reverse())
+            UpgradeLog.Add($"{record.At:HH:mm:ss}  {record.ToolName}");
+    }
+
+    private void OpenSettings()
+    {
+        var win = new SettingsWindow(App.Config) { Owner = Application.Current.MainWindow };
+        win.ShowDialog();
     }
 
     private void ToggleVoice()

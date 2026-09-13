@@ -36,6 +36,8 @@
                     <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
                     <TextBlock Text=" · provider:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="14,0,4,0"/>
                     <TextBlock Text="{Binding ProviderName}" Foreground="{StaticResource ArcCyan}" VerticalAlignment="Center"/>
+                    <Button Content="⚙ SETTINGS" Style="{StaticResource HudButton}" Width="130" Height="34"
+                            Margin="20,0,0,0" Command="{Binding OpenSettingsCommand}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -43,6 +45,7 @@
         <!-- Left HUD panel -->
         <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource BgPanel}"
                 BorderBrush="{StaticResource ArcCyanDim}" BorderThickness="0,0,1,0" Padding="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
                 <!-- Arc reactor visual -->
                 <Grid Width="220" Height="220" Margin="0,10,0,30">
@@ -84,7 +87,32 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <TextBlock Text="SELF-UPGRADE LOG" Style="{StaticResource DisplayText}" FontSize="12"
+                           Foreground="{StaticResource TextMuted}" Margin="0,24,0,8"/>
+                <ItemsControl ItemsSource="{Binding UpgradeLog}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Foreground="{StaticResource Gold}" FontSize="11" Margin="0,2"
+                                       TextWrapping="Wrap"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="(no dynamic upgrades loaded yet)" Foreground="{StaticResource TextMuted}"
+                           FontSize="11" Margin="0,2" FontStyle="Italic">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding UpgradeLog.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
             </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <!-- Chat panel -->

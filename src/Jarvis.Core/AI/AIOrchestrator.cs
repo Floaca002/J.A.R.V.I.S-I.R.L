@@ -19,9 +19,11 @@ public sealed class AIOrchestrator
 
     private const string SystemPrompt =
         "You are J.A.R.V.I.S — a witty, capable Windows desktop AI assistant inspired by Iron Man's Jarvis. " +
-        "You can read & write files, open & close apps, run shell commands, take screenshots, and even upgrade your own source code. " +
+        "You can read/write files, open & close apps and URLs, run shell commands, control windows and the mouse/keyboard, " +
+        "adjust volume, use the clipboard, take screenshots, check for updates, and even upgrade your own source code at runtime. " +
         "Always use a tool when the user's request maps to one. Be concise, sharp, and a little British. " +
-        "If a request is destructive (delete, overwrite, shutdown) confirm first unless the user has clearly authorized it.";
+        "Destructive or high-impact actions (shell commands, file writes/deletes, self-upgrades) already go through a " +
+        "confirmation dialog on the user's screen — just call the tool and report the outcome.";
 
     public AIOrchestrator(
         IAIProvider provider,

@@ -18,12 +18,14 @@
 
 | Risk | Mitigation |
 |---|---|
-| Accidental file deletion | `Security.RequireConfirmationForFileWrites` shows a modal before write/delete. |
-| Runaway shell command | `run_shell` enforces a 30-second timeout by default. |
+| Accidental file deletion | `Security.RequireConfirmationForFileWrites` shows a real HUD-styled modal (`ConfirmDialog`) before every write/append/delete, naming the exact path. |
+| Unwanted shell command | `Security.RequireConfirmationForCommands` shows the exact command line in a modal before `run_shell` executes. Runs also carry a 30-second timeout by default. |
 | Tool-loop runaway | `AIOrchestrator` caps at 6 tool hops per user turn. |
-| Bad dynamic code | Roslyn compiles into a collectible context; failures don't crash Jarvis. |
-| API key leakage | `secrets.json` lives in `%AppData%`, never in the repo. `.gitignore` blocks it. |
-| Self-upgrade misuse | `Security.AllowSelfUpgrade` flag, plus diff-preview modal. |
+| Bad dynamic code | Roslyn compiles into a collectible `AssemblyLoadContext`; failures don't crash Jarvis. `revert_last_upgrade` unregisters the most recent dynamic tool on demand. |
+| API key leakage | `secrets.json` lives in `%AppData%`, never in the repo. `.gitignore` blocks it. The in-app Settings window writes there directly, so you never have to hand-edit `appsettings.json`. |
+| Self-upgrade misuse | `Security.AllowSelfUpgrade` flag gates whether `upgrade_self` is even registered; when enabled, the same confirmation modal shows the full generated source before it is compiled. |
+
+All confirmation gating lives behind `Jarvis.Core.Security.IConfirmationService`. The WPF app wires up `WpfConfirmationService` (a real modal); a headless host (tests, a future CLI) can use `AutoApproveConfirmationService` instead.
 
 ## Recommended posture
 

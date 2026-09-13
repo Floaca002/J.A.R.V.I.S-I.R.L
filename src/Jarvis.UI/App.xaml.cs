@@ -4,9 +4,12 @@ using Jarvis.Core.AI;
 using Jarvis.Core.Commands;
 using Jarvis.Core.Config;
 using Jarvis.Core.Memory;
+using Jarvis.Core.Security;
 using Jarvis.Core.Tools.Builtin;
 using Jarvis.SelfUpgrade;
 using Jarvis.SystemControl;
+using Jarvis.UI.Services;
+using Jarvis.UI.Tools;
 using Jarvis.Voice;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -19,6 +22,7 @@ public partial class App : Application
     public static TextToSpeech Tts { get; private set; } = null!;
     public static SpeechToText Stt { get; private set; } = null!;
     public static JarvisConfig Config { get; private set; } = null!;
+    public static SelfUpgradeEngine UpgradeEngine { get; private set; } = null!;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -47,21 +51,38 @@ public partial class App : Application
         var apps = new AppController();
         var shell = new ShellExecutor();
         var automation = new AutomationController();
+        var clipboard = new ClipboardController();
+        IConfirmationService confirmation = new WpfConfirmationService();
 
         var dispatcher = new ToolDispatcher();
         dispatcher.Register(new ReadFileTool(fs));
-        dispatcher.Register(new WriteFileTool(fs));
+        dispatcher.Register(new WriteFileTool(fs, Config.Security, confirmation));
         dispatcher.Register(new ListDirectoryTool(fs));
-        dispatcher.Register(new DeletePathTool(fs));
+        dispatcher.Register(new CreateDirectoryTool(fs));
+        dispatcher.Register(new DeletePathTool(fs, Config.Security, confirmation));
         dispatcher.Register(new OpenAppTool(apps));
         dispatcher.Register(new CloseAppTool(apps));
         dispatcher.Register(new ListProcessesTool(apps));
-        dispatcher.Register(new RunShellTool(shell));
+        dispatcher.Register(new OpenUrlTool(apps));
+        dispatcher.Register(new RunShellTool(shell, Config.Security, confirmation));
         dispatcher.Register(new ScreenshotTool(automation));
+        dispatcher.Register(new AdjustVolumeTool(automation));
+        dispatcher.Register(new WindowControlTool(automation));
+        dispatcher.Register(new TypeTextTool(automation));
+        dispatcher.Register(new MouseClickTool(automation));
+        dispatcher.Register(new GetClipboardTool(clipboard));
+        dispatcher.Register(new SetClipboardTool(clipboard));
 
         var upgradeEngine = new SelfUpgradeEngine(dispatcher);
+        UpgradeEngine = upgradeEngine;
         if (Config.Security.AllowSelfUpgrade)
-            dispatcher.Register(new UpgradeSelfTool(upgradeEngine));
+        {
+            dispatcher.Register(new UpgradeSelfTool(upgradeEngine, Config.Security, confirmation));
+            dispatcher.Register(new RevertLastUpgradeTool(upgradeEngine));
+        }
+
+        var githubUpdater = new GitHubUpdater(Config.GitHub);
+        dispatcher.Register(new CheckForUpdatesTool(githubUpdater));
 
         var memory = new ConversationMemory(Config.Memory);
 
