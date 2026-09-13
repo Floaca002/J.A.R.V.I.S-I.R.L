@@ -1,6 +1,6 @@
 # J.A.R.V.I.S I.R.L. — Step-by-Step Build Plan
 
-This document walks you through every phase of bringing J.A.R.V.I.S to life, from zero to a fully self-upgradable AI assistant on your Windows machine.
+This document walks you through every phase of bringing J.A.R.V.I.S to life, from zero to a fully self-upgradable AI assistant on your Linux machine.
 
 ---
 
@@ -8,23 +8,23 @@ This document walks you through every phase of bringing J.A.R.V.I.S to life, fro
 
 | # | Task | Time |
 |---|------|------|
-| 0.1 | Install **.NET 8 SDK** → https://dotnet.microsoft.com/download/dotnet/8.0 | 5 min |
-| 0.2 | Install **Visual Studio 2022 Community** (free) with the *.NET desktop development* workload, OR use VS Code with the C# Dev Kit | 15 min |
-| 0.3 | Install **Git for Windows** → https://git-scm.com/download/win | 3 min |
-| 0.4 | Get a free **Groq API key** → https://console.groq.com/keys | 2 min |
-| 0.5 | *(Optional)* Install **Ollama** for offline LLM → https://ollama.com/download | 5 min |
-| 0.6 | *(Optional)* `ollama pull llama3.2` for local inference | 3 min |
+| 0.1 | Install **.NET 8 SDK** → `sudo pacman -S dotnet-sdk` (CachyOS/Arch) or https://dotnet.microsoft.com/download/dotnet/8.0 | 5 min |
+| 0.2 | Install a C# editor — VS Code with the C# Dev Kit works well; JetBrains Rider is another good option | 15 min |
+| 0.3 | Get a free **Groq API key** → https://console.groq.com/keys | 2 min |
+| 0.4 | *(Optional)* Install **Ollama** for offline LLM → https://ollama.com/download | 5 min |
+| 0.5 | *(Optional)* `ollama pull llama3.2` for local inference | 3 min |
+| 0.6 | *(Optional)* Install desktop CLI tools for full functionality — see [README's Linux platform notes](README.md#linux-platform-notes) | 5 min |
 
 ---
 
 ## Phase 1 — Get the Code
 
-```powershell
+```bash
 git clone https://github.com/Floaca002/J.A.R.V.I.S-I.R.L.git
 cd J.A.R.V.I.S-I.R.L
 ```
 
-Open `config/appsettings.json` and set:
+Once it's running you can configure everything from the **⚙ SETTINGS** window in the app (saved to `~/.config/JarvisIRL/secrets.json`). Or, to configure before the first run, open `config/appsettings.json` and set:
 
 ```json
 {
@@ -41,7 +41,7 @@ Open `config/appsettings.json` and set:
   },
   "Voice": {
     "Enabled": true,
-    "WakeWord": "jarvis"
+    "EspeakVoice": "en-gb+m3"
   },
   "GitHub": {
     "Repo": "Floaca002/J.A.R.V.I.S-I.R.L",
@@ -58,13 +58,13 @@ Open `config/appsettings.json` and set:
 
 ## Phase 2 — Build & Run
 
-```powershell
+```bash
 dotnet restore
 dotnet build -c Release
 dotnet run --project src/Jarvis.UI
 ```
 
-A WPF window opens with the Iron Man HUD. Press the **mic** button or type and press Enter.
+An Avalonia window opens with the Iron Man HUD. Press the **mic** button or type and press Enter.
 
 ---
 
@@ -72,27 +72,26 @@ A WPF window opens with the Iron Man HUD. Press the **mic** button or type and p
 
 Try:
 
-> *"Jarvis, what's the weather like in my command prompt?"*
-> *"Open Notepad."*
+> *"What processes are using the most memory?"*
+> *"Open Firefox."*
 > *"List the files on my desktop."*
-> *"Create a folder called 'Stark Industries' on my desktop."*
+> *"Create a folder called 'Stark Industries' in my home directory."*
 
 Jarvis will:
 1. Send your message + the tool catalog to Groq.
-2. Receive a function-call response (e.g. `open_app("notepad")`).
+2. Receive a function-call response (e.g. `open_app("firefox")`).
 3. Execute it via `Jarvis.SystemControl`.
-4. Speak the result back through TTS.
+4. Speak the result back through TTS (if `espeak-ng` or Piper is installed).
 
 ---
 
 ## Phase 4 — Enable Voice Mode
 
-Click the **🎤 wake** toggle in the HUD. Jarvis now listens continuously for the wake word **"Jarvis"**. After the wake word, your next sentence is captured, sent to the LLM, and answered out loud.
+Click the **🎤 mic** button in the HUD to start recording, click it again to stop — Jarvis transcribes what you said with whisper.cpp and sends it as your message. This is push-to-talk, not always-listening: there's no lightweight, verifiable "wake word" story on Linux without pulling in a full VAD/wake-word model, so Jarvis doesn't fake one.
 
 Voice stack used:
-- **STT**: `System.Speech.Recognition` (built into Windows, free, offline)
-- **TTS**: `System.Speech.Synthesis` (built into Windows, free, offline)
-- Optional upgrade path: Whisper.cpp + Piper TTS (see `docs/UPGRADES.md`)
+- **STT**: whisper.cpp (`whisper-cli`) + `arecord`/`parecord` to capture the microphone — needs a model downloaded separately (see README)
+- **TTS**: `espeak-ng` out of the box (robotic but zero setup), or Piper for a natural-sounding voice (needs a downloaded model)
 
 ---
 
@@ -108,13 +107,17 @@ What happens:
 3. The new tool is hot-loaded into the running process — no restart.
 4. *(Optional)* `Jarvis.SelfUpgrade.GitHubUpdater` commits the new file to your repo.
 
-You can also pull a full release upgrade:
+You can also check for a newer release:
 
 > *"Jarvis, check for updates."*
 
-This calls the GitHub Releases API, downloads the new build, and restarts itself into the new version.
+This calls the GitHub Releases API and tells you the latest tag and download link — installing it is currently a manual step (see [`SELF_UPGRADE.md`](docs/SELF_UPGRADE.md)).
 
-> **⚠️ Safety:** Self-upgrades are sandboxed. Every generated change is shown to you with a diff and requires confirmation unless you disable `RequireConfirmationForCommands`.
+If a self-installed tool misbehaves:
+
+> *"Jarvis, revert your last upgrade."*
+
+> **⚠️ Safety:** Every `run_shell`, file write/delete, and `upgrade_self` call shows you a HUD modal with the exact command/path/source and waits for you to authorize it, unless you disable the matching `Security.RequireConfirmation*` flag.
 
 ---
 
@@ -125,8 +128,8 @@ This calls the GitHub Releases API, downloads the new build, and restarts itself
 | Swap Groq for GPT-5.2 | Add `OpenAIProvider.cs` in `Jarvis.Core/AI/` |
 | Run fully offline | Set `DefaultProvider: "Ollama"` |
 | Add a new tool (e.g. Spotify) | Create class implementing `ITool` in `Jarvis.Core/Tools/` |
-| Run as a system tray app | Build with `OutputType=WinExe` and minimize to tray |
-| Auto-start with Windows | Add registry entry under `Run` |
+| Auto-start with your session | Add a `.desktop` file to `~/.config/autostart/` |
+| Package for your distro | `dotnet publish -r linux-x64 --self-contained` (see `BUILD_INSTRUCTIONS.md`), then wrap in a PKGBUILD/AppImage/Flatpak as you prefer |
 
 ---
 
@@ -134,10 +137,10 @@ This calls the GitHub Releases API, downloads the new build, and restarts itself
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                    YOUR WINDOWS PC                       │
+│                    YOUR LINUX DESKTOP                    │
 │                                                          │
 │  ┌────────────────────────────────────────────────┐     │
-│  │  Jarvis.UI  (WPF Iron Man HUD)                 │     │
+│  │  Jarvis.UI  (Avalonia Iron Man HUD)            │     │
 │  │  • Chat • Voice • Status • Settings            │     │
 │  └────────────┬───────────────────────────────────┘     │
 │               │                                          │
@@ -151,13 +154,14 @@ This calls the GitHub Releases API, downloads the new build, and restarts itself
 │  ┌────┴────┐ ┌───┴─────┐ ┌──┴────┐ ┌──┴──────────┐      │
 │  │ Voice   │ │ System  │ │ Self  │ │ Memory      │      │
 │  │ TTS/STT │ │ Control │ │Upgrade│ │ (JSON)      │      │
+│  │(CLI tool│ │(CLI tool│ │Roslyn │ │             │      │
+│  │ chains) │ │ chains) │ │       │ │             │      │
 │  └─────────┘ └─────────┘ └───┬───┘ └─────────────┘      │
 │                              │                           │
 └──────────────────────────────┼───────────────────────────┘
                                │   HTTPS
               ┌────────────────┴─────────────────┐
-              │   Cloud LLM Brain (Groq API)     │
-              │   llama-3.3-70b-versatile        │
+              │   Cloud LLM Brain (Groq/Claude)  │
               └──────────────────────────────────┘
 ```
 

@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Jarvis.UI.Views.MessageDialog"
+        Title="J.A.R.V.I.S"
+        Width="480" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="{StaticResource BgDeep}">
+    <Border BorderBrush="{StaticResource ArcCyanDim}" BorderThickness="1" Padding="24">
+        <StackPanel>
+            <TextBlock x:Name="TitleTextBlock" Classes="display" FontSize="16" Margin="0,0,0,12"/>
+            <TextBlock x:Name="MessageTextBlock" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextPrimary}"/>
+            <Button Classes="hud" Content="OK" Width="100" Height="40" Margin="0,20,0,0"
+                    HorizontalAlignment="Right" Click="OnOk"/>
+        </StackPanel>
+    </Border>
+</Window>

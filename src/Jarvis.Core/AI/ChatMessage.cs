@@ -22,8 +22,17 @@ public sealed class ChatMessage
     [JsonPropertyName("tool_call_id")]
     public string? ToolCallId { get; set; }
 
+    /// <summary>
+    /// Optional screenshot (raw PNG, base64) attached to a user turn so vision-capable
+    /// providers can "see" the screen. Not persisted to disk — see ConversationMemory.
+    /// </summary>
+    [JsonIgnore]
+    public string? ImagePngBase64 { get; set; }
+
     public static ChatMessage System(string content) => new() { Role = "system", Content = content };
     public static ChatMessage User(string content) => new() { Role = "user", Content = content };
+    public static ChatMessage UserWithScreenshot(string content, string imagePngBase64) =>
+        new() { Role = "user", Content = content, ImagePngBase64 = imagePngBase64 };
     public static ChatMessage Assistant(string content) => new() { Role = "assistant", Content = content };
     public static ChatMessage Tool(string toolCallId, string content) =>
         new() { Role = "tool", ToolCallId = toolCallId, Content = content };

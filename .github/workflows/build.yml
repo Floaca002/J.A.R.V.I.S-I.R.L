@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Jarvis targets Linux (Avalonia UI, CLI-tool-based system control, no Windows
+    # dependencies), so a plain Ubuntu runner is enough to verify every project builds.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore JARVIS.IRL.sln
+
+      - name: Build
+        run: dotnet build JARVIS.IRL.sln --configuration Release --no-restore

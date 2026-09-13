@@ -1,4 +1,5 @@
-using System.Windows;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Jarvis.UI.ViewModels;
 
 namespace Jarvis.UI;
@@ -11,9 +12,9 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object? sender, RoutedEventArgs e)
     {
         if (DataContext is MainViewModel vm)
-            vm.AttachScrollToBottom(() => ChatScroll.ScrollToBottom());
+            vm.AttachScrollToBottom(() => ChatScroll.ScrollToEnd());
     }
 }

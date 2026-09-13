@@ -12,6 +12,8 @@ public sealed class SelfUpgradeEngine
     private readonly CodeCompiler _compiler = new();
     private readonly ToolDispatcher _dispatcher;
     private readonly string _upgradesDir;
+    private readonly List<UpgradeRecord> _history = new();
+    private readonly object _gate = new();
 
     public SelfUpgradeEngine(ToolDispatcher dispatcher)
     {
@@ -22,7 +24,10 @@ public sealed class SelfUpgradeEngine
         Directory.CreateDirectory(_upgradesDir);
     }
 
-    public IReadOnlyList<UpgradeRecord> History { get; } = new List<UpgradeRecord>();
+    public IReadOnlyList<UpgradeRecord> History
+    {
+        get { lock (_gate) return _history.ToArray(); }
+    }
 
     public UpgradeResult InstallNewTool(string sourceCode, string toolNameHint)
     {
@@ -54,10 +59,23 @@ public sealed class SelfUpgradeEngine
         var savePath = Path.Combine(_upgradesDir, $"{tool.Name}-{DateTime.UtcNow:yyyyMMdd-HHmmss}.cs");
         File.WriteAllText(savePath, sourceCode);
 
-        ((List<UpgradeRecord>)History).Add(new UpgradeRecord(
-            tool.Name, DateTime.UtcNow, savePath));
+        lock (_gate) _history.Add(new UpgradeRecord(tool.Name, DateTime.UtcNow, savePath));
 
         return new UpgradeResult(true, tool.Name, $"Tool '{tool.Name}' compiled and loaded. Source saved at {savePath}");
+    }
+
+    /// <summary>Unregisters the most recently installed dynamic tool. Returns its name, or null if there was none.</summary>
+    public string? RevertLast()
+    {
+        UpgradeRecord? last;
+        lock (_gate)
+        {
+            if (_history.Count == 0) return null;
+            last = _history[^1];
+            _history.RemoveAt(_history.Count - 1);
+        }
+        _dispatcher.Unregister(last.ToolName);
+        return last.ToolName;
     }
 }
 

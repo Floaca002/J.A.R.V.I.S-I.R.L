@@ -1,0 +1,80 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- J.A.R.V.I.S Iron-Man HUD palette: deep navy + arc-reactor cyan + gold accents -->
+    <Styles.Resources>
+        <Color x:Key="BgDeepColor">#FF050B14</Color>
+        <Color x:Key="BgPanelColor">#FF0B1828</Color>
+        <Color x:Key="BgPanelAccentColor">#FF112338</Color>
+        <Color x:Key="ArcCyanColor">#FF22D3EE</Color>
+        <Color x:Key="ArcCyanDimColor">#FF0E7C8F</Color>
+        <Color x:Key="GoldColor">#FFFFB347</Color>
+        <Color x:Key="DangerColor">#FFE94560</Color>
+        <Color x:Key="TextPrimaryColor">#FFE2F5FA</Color>
+        <Color x:Key="TextMutedColor">#FF7FA0B5</Color>
+
+        <SolidColorBrush x:Key="BgDeep" Color="{StaticResource BgDeepColor}"/>
+        <SolidColorBrush x:Key="BgPanel" Color="{StaticResource BgPanelColor}"/>
+        <SolidColorBrush x:Key="BgPanelAccent" Color="{StaticResource BgPanelAccentColor}"/>
+        <SolidColorBrush x:Key="ArcCyan" Color="{StaticResource ArcCyanColor}"/>
+        <SolidColorBrush x:Key="ArcCyanDim" Color="{StaticResource ArcCyanDimColor}"/>
+        <SolidColorBrush x:Key="Gold" Color="{StaticResource GoldColor}"/>
+        <SolidColorBrush x:Key="Danger" Color="{StaticResource DangerColor}"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="{StaticResource TextPrimaryColor}"/>
+        <SolidColorBrush x:Key="TextMuted" Color="{StaticResource TextMutedColor}"/>
+
+        <FontFamily x:Key="DisplayFont">Rajdhani,Segoe UI,Arial</FontFamily>
+        <FontFamily x:Key="BodyFont">Consolas,Cascadia Mono,Courier New,monospace</FontFamily>
+    </Styles.Resources>
+
+    <!-- Sharp-edged "HUD" button: apply with Classes="hud" -->
+    <Style Selector="Button.hud">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource ArcCyan}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ArcCyanDim}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="18,10"/>
+        <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <ControlTemplate TargetType="Button">
+                <Grid>
+                    <Polygon Stroke="{TemplateBinding BorderBrush}"
+                             StrokeThickness="1"
+                             Fill="{TemplateBinding Background}"
+                             Points="0,0 100,0 110,10 110,30 100,40 0,40"
+                             Stretch="Fill"/>
+                    <ContentPresenter Content="{TemplateBinding Content}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      Margin="{TemplateBinding Padding}"/>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Button.hud:pointerover">
+        <Setter Property="Background" Value="#2222D3EE"/>
+        <Setter Property="Foreground" Value="{StaticResource Gold}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource Gold}"/>
+    </Style>
+
+    <!-- TextBox in HUD style: apply with Classes="hud" -->
+    <Style Selector="TextBox.hud">
+        <Setter Property="Background" Value="{StaticResource BgPanelAccent}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        <Setter Property="CaretBrush" Value="{StaticResource ArcCyan}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ArcCyanDim}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontFamily" Value="{StaticResource BodyFont}"/>
+        <Setter Property="FontSize" Value="14"/>
+    </Style>
+
+    <Style Selector="TextBlock.display">
+        <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
+        <Setter Property="Foreground" Value="{StaticResource ArcCyan}"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+    </Style>
+
+</Styles>

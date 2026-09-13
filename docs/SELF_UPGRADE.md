@@ -18,23 +18,25 @@ LLM → upgrade_self(tool_name, source_code)
         ↓
    ToolDispatcher.Register(tool)    ← live in this process
         ↓
-   Source persisted to %AppData%/JarvisIRL/upgrades/
+   Source persisted to ~/.config/JarvisIRL/upgrades/
 ```
 
 The new tool is **immediately available** in the next conversation turn. No restart.
 
-## 2. Full release upgrades (cold)
+## 2. Full release upgrades (cold) — check only, for now
 
 Triggered when you ask: *"Jarvis, check for updates."*
-- `GitHubUpdater.GetLatestReleaseAsync()` queries the GitHub Releases API for the repo `Floaca002/J.A.R.V.I.S-I.R.L`.
-- If a newer tag exists, Jarvis downloads the zip asset, extracts it next to the running exe, and launches a small updater stub that swaps the binaries and relaunches.
+- The `check_for_updates` tool calls `GitHubUpdater.GetLatestReleaseAsync()`, which queries the GitHub Releases API for the repo configured under `GitHub.Repo`.
+- Jarvis reports the latest tag/name and the release zip's download URL in the chat.
+
+Downloading, extracting, and swapping the running binaries automatically is **not** wired up yet — replacing files an app is currently running from is inherently risky to get right blind, so today's `check_for_updates` stops at "here's what's new and where to get it," and installing a new release is a manual step (download the zip, close Jarvis, extract over the install directory, relaunch). If you want to automate that last mile, `GitHubUpdater` already gives you the release URL to build on.
 
 ## Safety
 
-- Every dynamic tool source is saved with a timestamp — full audit trail.
-- Generated code runs in a **collectible** `AssemblyLoadContext` so a buggy tool can be unloaded.
-- If `Security.RequireConfirmationForCommands == true`, the UI shows a diff modal before compiling.
-- A panic phrase ("Jarvis, revert") unregisters the most recent dynamic tool.
+- Every dynamic tool source is saved with a timestamp — full audit trail (`~/.config/JarvisIRL/upgrades/`).
+- Generated code runs in a **collectible** `AssemblyLoadContext` so a buggy tool can, in principle, be unloaded.
+- If `Security.RequireConfirmationForCommands == true`, the UI shows the full generated source in a modal and waits for you to authorize it before compiling.
+- The `revert_last_upgrade` tool (say "Jarvis, revert your last upgrade") unregisters the most recently installed dynamic tool. The source file is kept on disk for audit even after reverting.
 
 ## Pushing upgrades back to the repo
 

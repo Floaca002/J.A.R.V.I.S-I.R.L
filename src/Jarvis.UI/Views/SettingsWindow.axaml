@@ -1,0 +1,109 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Jarvis.UI.Views.SettingsWindow"
+        Title="J.A.R.V.I.S — Settings"
+        Width="580" Height="760"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="{StaticResource BgDeep}">
+    <Window.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,14,0,4"/>
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Margin" Value="0,10,0,0"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{StaticResource BgPanelAccent}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource ArcCyan}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource ArcCyanDim}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontFamily" Value="{StaticResource BodyFont}"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="{StaticResource BgPanelAccent}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource ArcCyanDim}"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="24">
+        <TextBlock Grid.Row="0" Text="◤ SETTINGS" Classes="display" FontSize="20" Margin="0,0,0,10"/>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel>
+                <TextBlock Text="AI PROVIDER" Classes="display" FontSize="13" Margin="0,10,0,0"/>
+
+                <TextBlock Text="Default provider" Classes="label"/>
+                <ComboBox x:Name="ProviderCombo" Height="36" HorizontalAlignment="Stretch">
+                    <ComboBoxItem Content="Groq"/>
+                    <ComboBoxItem Content="Ollama"/>
+                    <ComboBoxItem Content="Anthropic"/>
+                </ComboBox>
+
+                <TextBlock Text="Groq API key" Classes="label"/>
+                <TextBox x:Name="GroqKeyBox" Height="36" PasswordChar="•"/>
+
+                <TextBlock Text="Groq model" Classes="label"/>
+                <TextBox x:Name="GroqModelBox" Height="36"/>
+
+                <TextBlock Text="Ollama model" Classes="label"/>
+                <TextBox x:Name="OllamaModelBox" Height="36"/>
+
+                <TextBlock Text="Claude (Anthropic) API key — separate from a claude.ai subscription, billed per token from console.anthropic.com" Classes="label" TextWrapping="Wrap"/>
+                <TextBox x:Name="AnthropicKeyBox" Height="36" PasswordChar="•"/>
+
+                <TextBlock Text="Claude model" Classes="label"/>
+                <TextBox x:Name="AnthropicModelBox" Height="36"/>
+
+                <TextBlock Text="VISION" Classes="display" FontSize="13" Margin="0,24,0,0"/>
+                <CheckBox x:Name="VisionAttachScreenBox" Content="Let Jarvis see your screen (attaches a fresh screenshot to every message)"/>
+                <TextBlock Text="Only Anthropic (Claude) currently understands images. This uses more input tokens on every single turn — it costs more per message when it's on."
+                           TextWrapping="Wrap" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,6,0,0"/>
+
+                <TextBlock Text="VOICE" Classes="display" FontSize="13" Margin="0,24,0,0"/>
+                <CheckBox x:Name="VoiceEnabledBox" Content="Enable voice (TTS/STT)"/>
+
+                <TextBlock Text="espeak-ng voice (used unless a Piper model is set below)" Classes="label"/>
+                <ComboBox x:Name="EspeakVoiceCombo" Height="36" HorizontalAlignment="Stretch"/>
+
+                <TextBlock Text="Piper model path (optional, for a natural voice — see README)" Classes="label"/>
+                <TextBox x:Name="PiperModelPathBox" Height="36" Watermark="/home/you/.local/share/piper/en_GB-alan-medium.onnx"/>
+
+                <TextBlock Text="whisper.cpp model path (optional, for push-to-talk voice input — see README)" Classes="label"/>
+                <TextBox x:Name="WhisperModelPathBox" Height="36" Watermark="/home/you/.local/share/whisper/ggml-base.en.bin"/>
+
+                <Button Content="▶ PREVIEW VOICE" Classes="hud" Width="180" Height="36" Margin="0,14,0,0"
+                        HorizontalAlignment="Left" Click="OnPreviewVoice"/>
+
+                <TextBlock Text="SECURITY" Classes="display" FontSize="13" Margin="0,24,0,0"/>
+                <CheckBox x:Name="ConfirmCommandsBox" Content="Require confirmation for shell commands &amp; self-upgrades"/>
+                <CheckBox x:Name="ConfirmWritesBox" Content="Require confirmation for file writes &amp; deletes"/>
+                <CheckBox x:Name="AllowSelfUpgradeBox" Content="Allow self-upgrade (upgrade_self tool)"/>
+
+                <TextBlock Text="GITHUB (optional — for check_for_updates)" Classes="display" FontSize="13" Margin="0,24,0,0"/>
+                <TextBlock Text="Repo (owner/name)" Classes="label"/>
+                <TextBox x:Name="GitHubRepoBox" Height="36"/>
+
+                <TextBlock Text="Token" Classes="label"/>
+                <TextBox x:Name="GitHubTokenBox" Height="36" PasswordChar="•"/>
+
+                <TextBlock Text="Changes are saved to ~/.config/JarvisIRL/secrets.json and take effect after restarting Jarvis."
+                           TextWrapping="Wrap" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,20,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="CANCEL" Classes="hud" Width="120" Height="40"
+                    Margin="0,0,12,0" Click="OnCancel"/>
+            <Button Content="SAVE ▸" Classes="hud" Width="140" Height="40" Click="OnSave"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,4 +1,6 @@
 using System.Text.Json.Nodes;
+using Jarvis.Core.Config;
+using Jarvis.Core.Security;
 using Jarvis.SystemControl;
 
 namespace Jarvis.Core.Tools.Builtin;
@@ -25,7 +27,7 @@ public sealed class ReadFileTool(FileSystemController fs) : ITool
     }
 }
 
-public sealed class WriteFileTool(FileSystemController fs) : ITool
+public sealed class WriteFileTool(FileSystemController fs, SecurityConfig security, IConfirmationService confirm) : ITool
 {
     public string Name => "write_file";
     public string Description => "Create or overwrite a text file with the supplied content.";
@@ -46,6 +48,17 @@ public sealed class WriteFileTool(FileSystemController fs) : ITool
         var path = args?["path"]?.GetValue<string>() ?? throw new ArgumentException("'path' required");
         var content = args?["content"]?.GetValue<string>() ?? string.Empty;
         var append = args?["append"]?.GetValue<bool>() ?? false;
+
+        if (security.RequireConfirmationForFileWrites)
+        {
+            var verb = append ? "append to" : "write/overwrite";
+            var approved = await confirm.ConfirmAsync(
+                "File write requested",
+                $"Jarvis wants to {verb} '{path}' ({content.Length} chars).",
+                ct).ConfigureAwait(false);
+            if (!approved) return "Cancelled by user.";
+        }
+
         await fs.WriteFileAsync(path, content, append, ct).ConfigureAwait(false);
         return $"OK — {(append ? "appended" : "wrote")} {content.Length} chars to {path}";
     }
@@ -72,7 +85,7 @@ public sealed class ListDirectoryTool(FileSystemController fs) : ITool
     }
 }
 
-public sealed class DeletePathTool(FileSystemController fs) : ITool
+public sealed class DeletePathTool(FileSystemController fs, SecurityConfig security, IConfirmationService confirm) : ITool
 {
     public string Name => "delete_path";
     public string Description => "Delete a file or folder. Destructive — confirm with user first.";
@@ -87,11 +100,43 @@ public sealed class DeletePathTool(FileSystemController fs) : ITool
     }
     """;
 
-    public Task<string> RunAsync(JsonNode? args, CancellationToken ct = default)
+    public async Task<string> RunAsync(JsonNode? args, CancellationToken ct = default)
     {
         var path = args?["path"]?.GetValue<string>() ?? throw new ArgumentException("'path' required");
         var recursive = args?["recursive"]?.GetValue<bool>() ?? false;
+
+        if (security.RequireConfirmationForFileWrites)
+        {
+            var approved = await confirm.ConfirmAsync(
+                "Delete requested",
+                $"Jarvis wants to delete '{path}'{(recursive ? " (recursively)" : string.Empty)}. This cannot be undone.",
+                ct).ConfigureAwait(false);
+            if (!approved) return "Cancelled by user.";
+        }
+
         fs.Delete(path, recursive);
-        return Task.FromResult($"Deleted {path}");
+        return $"Deleted {path}";
+    }
+}
+
+public sealed class CreateDirectoryTool(FileSystemController fs) : ITool
+{
+    public string Name => "create_directory";
+    public string Description => "Create a directory (and any missing parent folders).";
+    public string JsonSchema => """
+    {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string", "description": "Directory path to create." }
+      },
+      "required": ["path"]
+    }
+    """;
+
+    public Task<string> RunAsync(JsonNode? args, CancellationToken ct = default)
+    {
+        var path = args?["path"]?.GetValue<string>() ?? throw new ArgumentException("'path' required");
+        fs.CreateDirectory(path);
+        return Task.FromResult($"Created directory {path}");
     }
 }

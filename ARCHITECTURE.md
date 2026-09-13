@@ -15,10 +15,10 @@ This document is the **complete architectural blueprint** for the system: layers
                                    │  HTTPS + function-calling JSON
                                    │
 ┌──────────────────────────────────┼───────────────────────────────────┐
-│  💻  YOUR WINDOWS PC             │                                   │
+│  💻  YOUR LINUX DESKTOP             │                                   │
 │                                  ▼                                   │
 │   ┌──────────────────────────────────────────────────────────────┐   │
-│   │                    Jarvis.UI  (WPF .NET 8)                   │   │
+│   │                    Jarvis.UI  (Avalonia .NET 8)                   │   │
 │   │   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌──────────────┐    │   │
 │   │   │  HUD    │  │  Chat   │  │  Voice  │  │   Settings   │    │   │
 │   │   │  View   │  │  View   │  │  Toggle │  │     View     │    │   │
@@ -62,19 +62,20 @@ This document is the **complete architectural blueprint** for the system: layers
 JARVIS.IRL.sln
 │
 ├── src/
-│   ├── Jarvis.UI                  [WPF .exe — entry point]
-│   │   ├── App.xaml(.cs)
-│   │   ├── MainWindow.xaml(.cs)
+│   ├── Jarvis.UI                  [Avalonia executable — entry point]
+│   │   ├── App.axaml(.cs), Program.cs
+│   │   ├── MainWindow.axaml(.cs)
 │   │   ├── Views/                 [ChatView, HudView, SettingsView]
 │   │   ├── ViewModels/            [MVVM glue]
-│   │   ├── Styles/JarvisTheme.xaml
+│   │   ├── Styles/JarvisTheme.axaml
 │   │   └── Converters/
 │   │
 │   ├── Jarvis.Core                [class library — brain]
-│   │   ├── AI/                    [IAIProvider, Groq, Ollama, Orchestrator]
+│   │   ├── AI/                    [IAIProvider, Groq, Ollama, Anthropic, Orchestrator]
 │   │   ├── Tools/                 [ITool + built-in tools]
 │   │   ├── Commands/              [ToolDispatcher]
 │   │   ├── Memory/                [ConversationMemory]
+│   │   ├── Security/              [IConfirmationService]
 │   │   └── Config/                [JarvisConfig, settings binding]
 │   │
 │   ├── Jarvis.SystemControl       [class library — hands & feet]
@@ -84,8 +85,8 @@ JARVIS.IRL.sln
 │   │   └── AutomationController.cs
 │   │
 │   ├── Jarvis.Voice               [class library — ears & mouth]
-│   │   ├── TextToSpeech.cs        [System.Speech.Synthesis]
-│   │   └── SpeechToText.cs        [System.Speech.Recognition + wake word]
+│   │   ├── TextToSpeech.cs        [espeak-ng / Piper via CLI]
+│   │   └── SpeechToText.cs        [whisper.cpp push-to-talk via CLI]
 │   │
 │   └── Jarvis.SelfUpgrade         [class library — DNA editor]
 │       ├── SelfUpgradeEngine.cs   [orchestrates the whole upgrade flow]
@@ -145,7 +146,7 @@ Jarvis.UI ──► Jarvis.Core ──► Jarvis.SystemControl
    - If `tool_calls` present → `ToolDispatcher` executes each tool, results are looped back to the LLM as `role: tool` messages, until a final assistant message is produced.
    - Otherwise → final answer.
 5. Final text is rendered in UI + spoken via `TextToSpeech.Speak()`.
-6. Memory is appended to disk (`%AppData%/JarvisIRL/memory.json`).
+6. Memory is appended to disk (`~/.config/JarvisIRL/memory.json`).
 
 ---
 
@@ -175,7 +176,7 @@ Jarvis.UI ──► Jarvis.Core ──► Jarvis.SystemControl
 | `open_app` | `AppController` | Launch an .exe or Start-menu item |
 | `close_app` | `AppController` | Kill a process by name |
 | `list_processes` | `AppController` | Snapshot of running processes |
-| `run_shell` | `ShellExecutor` | Run a PowerShell command |
+| `run_shell` | `ShellExecutor` | Run a bash command |
 | `take_screenshot` | `AutomationController` | Capture primary monitor |
 | `mouse_click` / `type_text` | `AutomationController` | Win32 SendInput |
 | `upgrade_self` | `SelfUpgradeEngine` | Generate + compile + load new tool |
@@ -228,7 +229,7 @@ Each tool publishes a **JSON Schema** consumed by Groq for native function-calli
 **Key safety controls:**
 - Every generated change shows a diff in a modal — the user must approve.
 - Compilation runs in a `collectible` `AssemblyLoadContext` so failures don't crash Jarvis.
-- All upgrades are logged to `%AppData%/JarvisIRL/upgrades.log`.
+- All upgrades are logged to `~/.config/JarvisIRL/upgrades.log`.
 - A "panic rollback" command restores the last working assembly snapshot.
 
 ---
@@ -236,21 +237,25 @@ Each tool publishes a **JSON Schema** consumed by Groq for native function-calli
 ## 6. Voice Pipeline
 
 ```
-🎤 Mic ─► System.Speech.Recognition ─► WakeWordDetector
+🎤 click mic ─► arecord/parecord starts recording
                                             │
-                                            ▼  match "jarvis"
-                                       Continuous mode (5s window)
+                                            ▼ click mic again
+                                       SIGTERM → finalized .wav
+                                            │
+                                            ▼
+                                     whisper.cpp transcribes
                                             │
                                             ▼ recognized text
                                     AIOrchestrator.Ask(...)
                                             │
                                             ▼ reply
-                                    System.Speech.Synthesis ─► 🔊 Speakers
+                              Piper (if configured) or espeak-ng ─► 🔊 Speakers
 ```
 
-- **Latency target**: < 1.5 s wake-word → response start.
-- **No cloud voice**: all STT/TTS runs locally on Windows — zero cost.
-- **Future**: swap in Whisper.cpp + Piper TTS for higher quality.
+- Push-to-talk, not wake-word: there's no lightweight, verifiable "always listening"
+  option on Linux without a full VAD/wake-word model, so Jarvis doesn't fake one.
+- **No cloud voice**: all STT/TTS runs locally — zero cost.
+- **Better quality**: configure a Piper voice model for natural-sounding TTS instead of espeak-ng's robotic default.
 
 ---
 
@@ -258,12 +263,12 @@ Each tool publishes a **JSON Schema** consumed by Groq for native function-calli
 
 | Thread | Purpose |
 |---|---|
-| UI (Dispatcher) | All XAML bindings, animations |
+| UI (Avalonia Dispatcher) | All AXAML bindings, animations |
 | `Task.Run` workers | HTTP calls, tool execution |
-| Speech recognition thread | Owned by `SpeechRecognitionEngine`, marshals back to UI |
+| Recording process | `arecord`/`parecord` child process, stopped via SIGTERM |
 | Roslyn compile | Background, cancellable |
 
-UI updates from background threads go through `Application.Current.Dispatcher.InvokeAsync(...)`.
+UI updates from background threads go through `Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(...)`.
 
 ---
 
@@ -271,7 +276,7 @@ UI updates from background threads go through `Application.Current.Dispatcher.In
 
 ```
 config/appsettings.json   ← committed, no secrets
-%AppData%/JarvisIRL/secrets.json ← per-machine, API keys, GitHub PAT
+~/.config/JarvisIRL/secrets.json ← per-machine, API keys, GitHub PAT
 ```
 
 `JarvisConfig` merges both; user secrets override committed defaults.
@@ -280,7 +285,7 @@ config/appsettings.json   ← committed, no secrets
 
 ## 9. Logging & Observability
 
-- **Serilog** writes to `%AppData%/JarvisIRL/logs/jarvis-YYYYMMDD.log`.
+- **Serilog** writes to `~/.config/JarvisIRL/logs/jarvis-YYYYMMDD.log`.
 - Every LLM request + tool call is logged with timing.
 - A debug overlay (toggle with `F12`) shows the live log inside the HUD.
 
@@ -289,7 +294,7 @@ config/appsettings.json   ← committed, no secrets
 ## 10. Roadmap (post-MVP)
 
 1. Plugin marketplace (drop `.dll` into `plugins/`)
-2. Multi-modal: vision via Groq's `llama-3.2-vision`
+2. ~~Multi-modal: vision~~ — shipped, via `AnthropicProvider` + `Vision.AttachScreenToEveryMessage` (see README). Groq vision models are a possible future addition.
 3. Local-only mode with Ollama + Whisper.cpp + Piper
 4. Mobile companion (push notifications, remote commands)
 5. Home automation bridge (Home Assistant)

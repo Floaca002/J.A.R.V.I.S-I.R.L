@@ -1,0 +1,159 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:Jarvis.UI.ViewModels"
+        x:Class="Jarvis.UI.MainWindow"
+        Title="J.A.R.V.I.S — I.R.L."
+        Width="1280" Height="800"
+        MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BgDeep}"
+        FontFamily="{StaticResource BodyFont}"
+        Foreground="{StaticResource TextPrimary}">
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="320,*">
+        <!-- Top status bar -->
+        <Border Grid.ColumnSpan="2" Background="{StaticResource BgPanel}"
+                BorderBrush="{StaticResource ArcCyanDim}" BorderThickness="0,0,0,1" Padding="20,14">
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="◤ J.A.R.V.I.S" Classes="display" FontSize="20"/>
+                    <TextBlock Text="  /  I.R.L." Foreground="{StaticResource Gold}"
+                               FontFamily="{StaticResource DisplayFont}" FontSize="20" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Ellipse Width="10" Height="10" Fill="{Binding StatusColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+                    <TextBlock Text=" · provider:" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="14,0,4,0"/>
+                    <TextBlock Text="{Binding ProviderName}" Foreground="{StaticResource ArcCyan}" VerticalAlignment="Center"/>
+                    <Button Content="⚙ SETTINGS" Classes="hud" Width="130" Height="34"
+                            Margin="20,0,0,0" Command="{Binding OpenSettingsCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Left HUD panel -->
+        <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource BgPanel}"
+                BorderBrush="{StaticResource ArcCyanDim}" BorderThickness="0,0,1,0" Padding="20">
+            <ScrollViewer>
+                <StackPanel>
+                    <!-- Arc reactor visual -->
+                    <Grid Width="220" Height="220" Margin="0,10,0,30">
+                        <Ellipse Width="220" Height="220" Stroke="{StaticResource ArcCyanDim}" StrokeThickness="1"/>
+                        <Ellipse Width="180" Height="180" Stroke="{StaticResource ArcCyan}" StrokeThickness="2" Opacity="0.6"/>
+                        <Ellipse Width="120" Height="120" Stroke="{StaticResource ArcCyan}" StrokeThickness="1.5"/>
+                        <Ellipse Width="60" Height="60" Fill="{StaticResource ArcCyan}" Opacity="0.85"/>
+                        <Ellipse Width="22" Height="22" Fill="White"/>
+                        <Ellipse Width="220" Height="220" Stroke="{StaticResource Gold}" StrokeThickness="0.5"
+                                 StrokeDashArray="2,6" Opacity="0.7">
+                            <Ellipse.RenderTransform>
+                                <RotateTransform Angle="0"/>
+                            </Ellipse.RenderTransform>
+                            <Ellipse.Styles>
+                                <Style Selector="Ellipse">
+                                    <Style.Animations>
+                                        <Animation Duration="0:0:20" IterationCount="INFINITE">
+                                            <KeyFrame Cue="0%">
+                                                <Setter Property="RotateTransform.Angle" Value="0"/>
+                                            </KeyFrame>
+                                            <KeyFrame Cue="100%">
+                                                <Setter Property="RotateTransform.Angle" Value="360"/>
+                                            </KeyFrame>
+                                        </Animation>
+                                    </Style.Animations>
+                                </Style>
+                            </Ellipse.Styles>
+                        </Ellipse>
+                    </Grid>
+
+                    <TextBlock Text="SYSTEM" Classes="display" FontSize="12"
+                               Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding SystemSummary}" TextWrapping="Wrap"
+                               Foreground="{StaticResource TextPrimary}" FontSize="12" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding VisionStatusText}" Foreground="{Binding VisionStatusColor}"
+                               TextWrapping="Wrap" FontSize="12" Margin="0,0,0,20"/>
+
+                    <TextBlock Text="TOOLS LOADED" Classes="display" FontSize="12"
+                               Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
+                    <ItemsControl ItemsSource="{Binding ToolNames}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Foreground="{StaticResource ArcCyan}" FontSize="12" Margin="0,2"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="SELF-UPGRADE LOG" Classes="display" FontSize="12"
+                               Foreground="{StaticResource TextMuted}" Margin="0,24,0,8"/>
+                    <ItemsControl ItemsSource="{Binding UpgradeLog}" IsVisible="{Binding HasUpgrades}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Foreground="{StaticResource Gold}" FontSize="11" Margin="0,2"
+                                           TextWrapping="Wrap"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="(no dynamic upgrades loaded yet)" Foreground="{StaticResource TextMuted}"
+                               FontSize="11" Margin="0,2" FontStyle="Italic"
+                               IsVisible="{Binding !HasUpgrades}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Chat panel -->
+        <Border Grid.Row="1" Grid.Column="1" Background="{StaticResource BgDeep}" Padding="30,20">
+            <Grid RowDefinitions="*,Auto">
+                <ScrollViewer x:Name="ChatScroll">
+                    <ItemsControl ItemsSource="{Binding Messages}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,8" Padding="14,10" BorderThickness="1"
+                                        Background="{Binding Background}"
+                                        BorderBrush="{Binding Border}"
+                                        HorizontalAlignment="{Binding Align}"
+                                        MaxWidth="780">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Role}" Foreground="{Binding RoleColor}"
+                                                   FontFamily="{StaticResource DisplayFont}" FontSize="11"
+                                                   FontWeight="Bold" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource TextPrimary}" FontSize="14"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Border Grid.Row="1" Margin="0,16,0,0" Padding="0">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <Button Grid.Column="0" Classes="hud"
+                                Content="{Binding MicLabel}" Width="150" Height="44"
+                                Command="{Binding ToggleVoiceCommand}" Margin="0,0,12,0"/>
+
+                        <TextBox Grid.Column="1" Classes="hud"
+                                 Text="{Binding InputText}"
+                                 Height="44" VerticalContentAlignment="Center">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding SendCommand}"/>
+                            </TextBox.KeyBindings>
+                        </TextBox>
+
+                        <Button Grid.Column="2" Classes="hud"
+                                Content="SEND ▸" Width="120" Height="44"
+                                Command="{Binding SendCommand}" Margin="12,0,0,0"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{StaticResource BgPanel}"
+                BorderBrush="{StaticResource ArcCyanDim}" BorderThickness="0,1,0,0" Padding="20,8">
+            <TextBlock Text="◢ Stark Industries Internal Build · do not distribute · Mark I"
+                       Foreground="{StaticResource TextMuted}" FontSize="11"/>
+        </Border>
+    </Grid>
+</Window>
