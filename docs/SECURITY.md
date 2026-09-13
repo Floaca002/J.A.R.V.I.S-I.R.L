@@ -24,6 +24,7 @@
 | Bad dynamic code | Roslyn compiles into a collectible `AssemblyLoadContext`; failures don't crash Jarvis. `revert_last_upgrade` unregisters the most recent dynamic tool on demand. |
 | API key leakage | `secrets.json` lives in `%AppData%`, never in the repo. `.gitignore` blocks it. The in-app Settings window writes there directly, so you never have to hand-edit `appsettings.json`. |
 | Self-upgrade misuse | `Security.AllowSelfUpgrade` flag gates whether `upgrade_self` is even registered; when enabled, the same confirmation modal shows the full generated source before it is compiled. |
+| Screen vision leaking to the cloud | `Vision.AttachScreenToEveryMessage` is **off by default**. When on, a fresh screenshot is sent with every message to whichever provider is configured — never written to disk, never persisted in `memory.json`. The HUD always shows a 👁 VISION indicator so you know it's on. Only turn this on with a provider you trust with what's on your screen. |
 
 All confirmation gating lives behind `Jarvis.Core.Security.IConfirmationService`. The WPF app wires up `WpfConfirmationService` (a real modal); a headless host (tests, a future CLI) can use `AutoApproveConfirmationService` instead.
 

@@ -23,6 +23,7 @@ public partial class App : Application
     public static SpeechToText Stt { get; private set; } = null!;
     public static JarvisConfig Config { get; private set; } = null!;
     public static SelfUpgradeEngine UpgradeEngine { get; private set; } = null!;
+    public static AutomationController Automation { get; private set; } = null!;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -45,12 +46,15 @@ public partial class App : Application
             Config.AI.Groq.ApiKey = Environment.GetEnvironmentVariable("JARVIS_GROQ_API_KEY") ?? string.Empty;
         if (string.IsNullOrWhiteSpace(Config.GitHub.Token))
             Config.GitHub.Token = Environment.GetEnvironmentVariable("JARVIS_GITHUB_TOKEN") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(Config.AI.Anthropic.ApiKey))
+            Config.AI.Anthropic.ApiKey = Environment.GetEnvironmentVariable("JARVIS_ANTHROPIC_API_KEY") ?? string.Empty;
 
         // Build system-control services.
         var fs = new FileSystemController();
         var apps = new AppController();
         var shell = new ShellExecutor();
         var automation = new AutomationController();
+        Automation = automation;
         var clipboard = new ClipboardController();
         IConfirmationService confirmation = new WpfConfirmationService();
 
@@ -86,9 +90,13 @@ public partial class App : Application
 
         var memory = new ConversationMemory(Config.Memory);
 
-        IAIProvider provider = Config.AI.DefaultProvider.Equals("Ollama", StringComparison.OrdinalIgnoreCase)
-            ? new OllamaProvider(Config.AI.Ollama)
-            : new GroqProvider(Config.AI.Groq);
+        IAIProvider provider = Config.AI.DefaultProvider switch
+        {
+            var p when p.Equals("Ollama", StringComparison.OrdinalIgnoreCase) => new OllamaProvider(Config.AI.Ollama),
+            var p when p.Equals("Anthropic", StringComparison.OrdinalIgnoreCase)
+                    || p.Equals("Claude", StringComparison.OrdinalIgnoreCase) => new AnthropicProvider(Config.AI.Anthropic),
+            _ => new GroqProvider(Config.AI.Groq)
+        };
 
         Orchestrator = new AIOrchestrator(provider, dispatcher, memory);
 

@@ -53,6 +53,7 @@
                 <ComboBox x:Name="ProviderCombo" Height="36">
                     <ComboBoxItem Content="Groq"/>
                     <ComboBoxItem Content="Ollama"/>
+                    <ComboBoxItem Content="Anthropic"/>
                 </ComboBox>
 
                 <TextBlock Text="Groq API key" Style="{StaticResource Label}"/>
@@ -64,14 +65,35 @@
                 <TextBlock Text="Ollama model" Style="{StaticResource Label}"/>
                 <TextBox x:Name="OllamaModelBox" Height="36"/>
 
+                <TextBlock Text="Claude (Anthropic) API key — separate from a claude.ai subscription, billed per token from console.anthropic.com" Style="{StaticResource Label}" TextWrapping="Wrap"/>
+                <PasswordBox x:Name="AnthropicKeyBox" Height="36"/>
+
+                <TextBlock Text="Claude model" Style="{StaticResource Label}"/>
+                <TextBox x:Name="AnthropicModelBox" Height="36"/>
+
+                <TextBlock Text="VISION" Style="{StaticResource DisplayText}" FontSize="13" Margin="0,24,0,0"/>
+                <CheckBox x:Name="VisionAttachScreenBox" Content="Let Jarvis see your screen (attaches a fresh screenshot to every message)"/>
+                <TextBlock Text="Only Anthropic (Claude) currently understands images. This uses more input tokens on every single turn — it costs more per message when it's on."
+                           TextWrapping="Wrap" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,6,0,0"/>
+
                 <TextBlock Text="VOICE" Style="{StaticResource DisplayText}" FontSize="13" Margin="0,24,0,0"/>
                 <CheckBox x:Name="VoiceEnabledBox" Content="Enable voice (TTS/STT)"/>
 
                 <TextBlock Text="Wake word" Style="{StaticResource Label}"/>
                 <TextBox x:Name="WakeWordBox" Height="36"/>
 
-                <TextBlock Text="Voice name (Windows SAPI voice)" Style="{StaticResource Label}"/>
-                <TextBox x:Name="VoiceNameBox" Height="36"/>
+                <TextBlock Text="Voice (installed on this PC)" Style="{StaticResource Label}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox x:Name="VoiceNameCombo" Grid.Column="0" Height="36"/>
+                    <Button Grid.Column="1" Content="▶ PREVIEW" Style="{StaticResource HudButton}" Width="120" Height="36"
+                            Margin="12,0,0,0" Click="OnPreviewVoice"/>
+                </Grid>
+                <TextBlock Text="For a more movie-accurate sound, install a Windows &quot;Natural&quot; voice (e.g. Ryan, Guy) via Settings → Time &amp; language → Speech → Add voices, then pick it here."
+                           TextWrapping="Wrap" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,6,0,0"/>
 
                 <TextBlock Text="SECURITY" Style="{StaticResource DisplayText}" FontSize="13" Margin="0,24,0,0"/>
                 <CheckBox x:Name="ConfirmCommandsBox" Content="Require confirmation for shell commands &amp; self-upgrades"/>

@@ -71,10 +71,11 @@ JARVIS.IRL.sln
 │   │   └── Converters/
 │   │
 │   ├── Jarvis.Core                [class library — brain]
-│   │   ├── AI/                    [IAIProvider, Groq, Ollama, Orchestrator]
+│   │   ├── AI/                    [IAIProvider, Groq, Ollama, Anthropic, Orchestrator]
 │   │   ├── Tools/                 [ITool + built-in tools]
 │   │   ├── Commands/              [ToolDispatcher]
 │   │   ├── Memory/                [ConversationMemory]
+│   │   ├── Security/              [IConfirmationService]
 │   │   └── Config/                [JarvisConfig, settings binding]
 │   │
 │   ├── Jarvis.SystemControl       [class library — hands & feet]
@@ -289,7 +290,7 @@ config/appsettings.json   ← committed, no secrets
 ## 10. Roadmap (post-MVP)
 
 1. Plugin marketplace (drop `.dll` into `plugins/`)
-2. Multi-modal: vision via Groq's `llama-3.2-vision`
+2. ~~Multi-modal: vision~~ — shipped, via `AnthropicProvider` + `Vision.AttachScreenToEveryMessage` (see README). Groq vision models are a possible future addition.
 3. Local-only mode with Ollama + Whisper.cpp + Piper
 4. Mobile companion (push notifications, remote commands)
 5. Home automation bridge (Home Assistant)

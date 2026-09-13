@@ -21,6 +21,7 @@ public sealed class AIOrchestrator
         "You are J.A.R.V.I.S — a witty, capable Windows desktop AI assistant inspired by Iron Man's Jarvis. " +
         "You can read/write files, open & close apps and URLs, run shell commands, control windows and the mouse/keyboard, " +
         "adjust volume, use the clipboard, take screenshots, check for updates, and even upgrade your own source code at runtime. " +
+        "When a screenshot is attached to a message, look at it and use what you see to answer — the user's vision setting decides when that happens, not you. " +
         "Always use a tool when the user's request maps to one. Be concise, sharp, and a little British. " +
         "Destructive or high-impact actions (shell commands, file writes/deletes, self-upgrades) already go through a " +
         "confirmation dialog on the user's screen — just call the tool and report the outcome.";
@@ -46,10 +47,14 @@ public sealed class AIOrchestrator
 
     /// <summary>
     /// Run a full ask → (tool-call loop) → final reply turn.
+    /// Pass <paramref name="screenshotPngBase64"/> to give vision-capable providers
+    /// (currently Anthropic) a look at the screen for this turn.
     /// </summary>
-    public async Task<string> AskAsync(string userInput, CancellationToken cancellationToken = default)
+    public async Task<string> AskAsync(string userInput, string? screenshotPngBase64 = null, CancellationToken cancellationToken = default)
     {
-        _memory.Append(ChatMessage.User(userInput));
+        _memory.Append(screenshotPngBase64 == null
+            ? ChatMessage.User(userInput)
+            : ChatMessage.UserWithScreenshot(userInput, screenshotPngBase64));
 
         // Up to 6 tool-call hops to prevent runaway loops.
         for (var hop = 0; hop < 6; hop++)

@@ -76,7 +76,19 @@
                 <TextBlock Text="SYSTEM" Style="{StaticResource DisplayText}" FontSize="12"
                            Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
                 <TextBlock Text="{Binding SystemSummary}" TextWrapping="Wrap"
-                           Foreground="{StaticResource TextPrimary}" FontSize="12" Margin="0,0,0,20"/>
+                           Foreground="{StaticResource TextPrimary}" FontSize="12" Margin="0,0,0,12"/>
+                <TextBlock Text="{Binding VisionStatusText}" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,20">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding VisionStatusText}" Value="👁 VISION: ON — screen shared every message">
+                                    <Setter Property="Foreground" Value="{StaticResource Gold}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
 
                 <TextBlock Text="TOOLS LOADED" Style="{StaticResource DisplayText}" FontSize="12"
                            Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>

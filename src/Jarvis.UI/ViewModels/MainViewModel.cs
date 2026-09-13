@@ -32,6 +32,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public Brush StatusColor { get => _statusColor; set { _statusColor = value; OnPropertyChanged(); } }
     public string MicLabel { get => _micLabel; set { _micLabel = value; OnPropertyChanged(); } }
     public string ProviderName => App.Orchestrator?.ProviderName ?? "—";
+    public string VisionStatusText => App.Config?.Vision.AttachScreenToEveryMessage == true
+        ? "👁 VISION: ON — screen shared every message"
+        : "👁 VISION: OFF";
     public string SystemSummary =>
         $"OS: {Environment.OSVersion}\n" +
         $"User: {Environment.UserName}\n" +
@@ -81,11 +84,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         Messages.Add(new ChatBubble("YOU", text, false));
         _scrollToBottom?.Invoke();
+
+        string? screenshot = null;
+        if (App.Config?.Vision.AttachScreenToEveryMessage == true)
+        {
+            SetStatus("Looking at your screen…", Brushes.Cyan);
+            try { screenshot = App.Automation?.CaptureScreenPngBase64(); }
+            catch { /* best effort — proceed without vision this turn */ }
+        }
         SetStatus("Thinking…", Brushes.Orange);
 
         try
         {
-            var reply = await App.Orchestrator.AskAsync(text);
+            var reply = await App.Orchestrator.AskAsync(text, screenshot);
             Messages.Add(new ChatBubble("JARVIS", reply, true));
             _scrollToBottom?.Invoke();
             try { App.Tts?.Speak(reply); } catch { }
@@ -116,6 +127,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         var win = new SettingsWindow(App.Config) { Owner = Application.Current.MainWindow };
         win.ShowDialog();
+        OnPropertyChanged(nameof(VisionStatusText));
     }
 
     private void ToggleVoice()
